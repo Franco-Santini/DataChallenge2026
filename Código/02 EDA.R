@@ -11,7 +11,7 @@ catalogo_especificaciones_operaciones <- read.csv("Datos modificados/catalogo_es
 catalogo_especificaciones_procurement <- read.csv("Datos modificados/catalogo_especificaciones_procurement.csv")
 especificaciones_procurement <- read.csv("Datos modificados/especificaciones_procurement.csv")
 
-
+G = 9.81
 ################------------------- Gráfico posibles -------------------################
 # Cantidad de productos por tipo de caja
 catalogo_especificaciones_operaciones |> 
