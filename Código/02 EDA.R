@@ -146,7 +146,7 @@ cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.4, t
       type = "rect",
       x0 = offset + 0.5 - frac/2, x1 = offset + 0.5 + frac/2,
       y0 = 0.5 - frac/2, y1 = 0.5 + frac/2,
-      fillcolor = "red",
+      fillcolor = "steelblue",
       line = list(width = 0)
     )
     
@@ -217,5 +217,4 @@ cat("El costo total de la situación actual es de:", costo_total_actual, "USD")
 
 # Representación del costo total por planta
 representacion_costo_por_planta_actual <- round(costo_por_planta/costo_total_actual, 4)
-
 
