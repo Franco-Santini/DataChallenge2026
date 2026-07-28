@@ -121,7 +121,7 @@ carga_max_4.5mm_grosor <- perimetro_cajas$perimetro_caja_m * 1400 / G
 carga_max_5mm_grosor <- perimetro_cajas$perimetro_caja_m * 1650 / G
 
 # Porcentajes de utilización del pallet
-cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.4, titulo = "") {
+cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.5, titulo = "") {
   
   n <- length(porcentajes)
   if (is.null(etiquetas)) etiquetas <- paste0("Item ", 1:n)
@@ -146,33 +146,36 @@ cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.4, t
       type = "rect",
       x0 = offset + 0.5 - frac/2, x1 = offset + 0.5 + frac/2,
       y0 = 0.5 - frac/2, y1 = 0.5 + frac/2,
-      fillcolor = "steelblue",
+      fillcolor = "#009587",
       line = list(width = 0)
     )
     
     annotations_list[[length(annotations_list) + 1]] <- list(
       x = offset + 0.5, y = 0.5, text = paste0(round(porcentaje), "%"),
-      showarrow = FALSE, font = list(size = 17, color = "black")
+      showarrow = FALSE, font = list(size = 20, color = "black")
     )
     
+    # etiqueta debajo, con salto de línea si el texto es largo
     annotations_list[[length(annotations_list) + 1]] <- list(
-      x = offset + 0.5, y = -0.2, text = etiquetas[i],
-      showarrow = FALSE, font = list(size = 14, color = "black")
+      x = offset + 0.5, y = -0.25, text = gsub(" ", "<br>", etiquetas[i]),
+      showarrow = FALSE, font = list(size = 12, color = "black"),
+      align = "center"
     )
   }
   
-  plot_ly() %>%
+  plot_ly(width = 150 * n + 100, height = 350) %>%
     layout(
-      title = titulo,
+      title = list(text = titulo, font = list(size = 16)),
       xaxis = list(range = c(-0.3, (n - 1) * (1 + espacio) + 1.3),
                    showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE,
                    scaleanchor = "y"),
-      yaxis = list(range = c(-0.4, 1.3),
+      yaxis = list(range = c(-0.5, 1.05),
                    showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
       shapes = shapes_list,
       annotations = annotations_list,
-      margin = list(l = 20, r = 20, t = 50, b = 20)
-    )
+      margin = list(l = 20, r = 20, t = 60, b = 20)
+    ) %>%
+    config(responsive = FALSE)
 }
 
 prom_uti_pallet = mean(catalogo_especificaciones_operaciones$utilizacion)
@@ -180,11 +183,7 @@ prom_uti_pallet = mean(catalogo_especificaciones_operaciones$utilizacion)
 cuadrados_porcentaje(
   porcentajes = prom_uti_pallet * 100,
   etiquetas = "Total",
-  titulo = list(
-    text = "Utilización promedio del pallet",
-    font = list(size = 17, color = "black"),
-    x = 0.5
-  )
+  titulo = "Utilización promedio del pallet"
 )
 
 # Porcentajes de utilización del pallet por categoria
@@ -196,11 +195,7 @@ uti_pallet <- catalogo_especificaciones_operaciones %>%
 cuadrados_porcentaje(
   porcentajes = uti_pallet$promedio * 100,
   etiquetas = uti_pallet$categoria,
-  titulo = list(
-    text = "Utilización promedio del pallet por categoría",
-    font = list(size = 17, color = "black"),
-    x = 0.5
-  )
+  titulo ="Utilización promedio del pallet por categoría"
 )
 
 ######################### EDA Asociado al costo total #########################
