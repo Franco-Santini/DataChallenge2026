@@ -5,7 +5,7 @@ library(stringr)
 
 # Conjuntos de datos
 catalogo <- read.csv("Data/catalogo_productos.csv")
-especificaciones_caja <- read.csv("Data/especificaciones_cajas.csv")
+especificaciones_caja <- read.csv("Datos/especificaciones_cajas.csv")
 operaciones <- read.csv("Data/operaciones_planta.csv")
 procurement <- read.csv("Data/procurement_cajas.csv")
 

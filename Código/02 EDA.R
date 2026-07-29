@@ -22,7 +22,7 @@ catalogo_especificaciones_operaciones |>
   ungroup() |> 
   ggplot() +
   aes(x = n_prod) +
-  geom_bar(color = "black", fill = "steelblue") +
+  geom_bar(color = "black", fill = "#009587") +
   labs(x = "Productos por caja", y = "Cantidad") +
   theme_bw()
 
@@ -34,7 +34,7 @@ catalogo_especificaciones_operaciones |>
   ) |> 
   ggplot() +
   aes(x = categoria, y = n_prod) +
-  geom_col(color = "black", fill = "steelblue") +
+  geom_col(color = "black", fill = "#009587") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45))
 
@@ -46,7 +46,7 @@ catalogo_especificaciones_operaciones |>
   ) |> 
   ggplot() +
   aes(x = tipo_proyecto, y = n) +
-  geom_col(color = "black", fill = "steelblue") +
+  geom_col(color = "black", fill = "#009587") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45))
 
@@ -73,14 +73,14 @@ catalogo_especificaciones_operaciones |>
 catalogo_especificaciones_operaciones |> 
   ggplot() +
   aes(y = utilizacion) +
-  geom_boxplot(fill = "steelblue") +
+  geom_boxplot(fill = "#009587") +
   theme_bw()
 
 # Distribución de la utilización del pallet según categoría de producto
 catalogo_especificaciones_operaciones |> 
   ggplot() +
   aes(x = factor(categoria), y = utilizacion) +
-  geom_boxplot(fill = "steelblue") +
+  geom_boxplot(fill = "#009587") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90))
 
@@ -88,7 +88,7 @@ catalogo_especificaciones_operaciones |>
 catalogo_especificaciones_operaciones |> 
   ggplot() +
   aes(x = factor(tipo_proyecto), y = utilizacion) +
-  geom_boxplot(fill = "steelblue") +
+  geom_boxplot(fill = "#009587") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90))
 
@@ -204,7 +204,22 @@ costo_por_planta <- colSums(catalogo_especificaciones_operaciones |> select(cost
                                                                             costo_total_planta_buenos_aires,
                                                                             costo_total_planta_curitiba,
                                                                             costo_total_planta_monterrey,
-                                                                            costo_total_planta_santiago))
+                                                                            costo_total_planta_santiago)) 
+                                                                     
+costo_por_planta_df = data.frame(planta = names(costo_por_planta), costos = costo_por_planta, row.names = NULL)
+costo_por_planta_df$planta = recode(costo_por_planta_df$planta, "costo_total_planta_bakersfield" = "Bakersfield", 
+                                                                "costo_total_planta_buenos_aires" = "Buenos Aires", 
+                                                                "costo_total_planta_curitiba" = "Curitiba", 
+                                                                "costo_total_planta_monterrey" = "Monterrey", 
+                                                                "costo_total_planta_santiago" = "Santiago")
+
+g1 = ggplot(costo_por_planta_df) +
+      aes(x = reorder(planta, -costos), y = costos, text = paste0("Planta: ", planta, "<br>Costo: ", comma(costos))) +
+      geom_col(color = "black", fill = "#009587") +
+      scale_y_continuous(labels = label_number(scale = 1e-6, suffix = " mill.")) +
+      labs(x = "Planta", y = "Costos") +
+      theme_bw()
+ggplotly(g1, tooltip = "text")
 
 # Costo total de todos los productos vendidos en la situación actual
 costo_total_actual <- sum(catalogo_especificaciones_operaciones$costo_total)
@@ -212,4 +227,11 @@ cat("El costo total de la situación actual es de:", costo_total_actual, "USD")
 
 # Representación del costo total por planta
 representacion_costo_por_planta_actual <- round(costo_por_planta/costo_total_actual, 4)
+
+# Costo unitario promedio por planta
+unitario_prom_por_planta <- colMeans(especificaciones_procurement |> select(costo_unitario_planta_bakersfield,
+                                                                            costo_unitario_planta_buenos_aires,
+                                                                            costo_unitario_planta_curitiba,
+                                                                            costo_unitario_planta_monterrey,
+                                                                            costo_unitario_planta_santiago))
 
