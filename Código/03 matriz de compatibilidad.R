@@ -65,11 +65,11 @@ combos <- producto_dims %>%
 # 
 #     # 3) Headspace máximo (solo aplica al lado que CRECE; si se achica, no se evalúa)
 #     hs_L = ifelse(L_int > L_prod, (L_int - L_prod) <= pmin(pct_hs*L_int, 40), TRUE),
-#     L_min = pmin(pct_hs*L_prod, 40),
+#     L_min = pmin(pct_hs*L_int, 40),
 #     hs_W = ifelse(W_int > W_prod, (W_int - W_prod) <= pmin(pct_hs*W_int, 40), TRUE),
-#     W_min = pmin(pct_hs*W_prod, 40),
+#     W_min = pmin(pct_hs*W_int, 40),
 #     hs_H = ifelse(H_int > H_prod, (H_int - H_prod) <= pmin(pct_hs*H_int, 40), TRUE),
-#     H_min = pmin(pct_hs*H_prod, 40),
+#     H_min = pmin(pct_hs*H_int, 40),
 #     headspace_ok = hs_L & hs_W & hs_H,
 # 
 #     # 4) Resistencia a compresion (ECT recalculado para este grosor)
@@ -392,9 +392,16 @@ ggplot(data = prod_comp_cajas)+
   theme_ridges() + 
   theme(legend.position = "none")
 
-#A mayor grosor, las
+#A mayor grosor, los productos podrán ser utilizados en más cajas generando un catálogo más flexible, pero el costo unitario crece, mientras que si el
+#grosor es menor, el catálogo es más rígido pero el costo unitario es menor
 
+#Cantidad de productos que acepta cada caja
 
+cajas_comp_productos = compat_ok %>% group_by(caja_tipo_id, grosor) %>% summarise(Cantidad = n())
+
+#Sería replicar lo de arriba
+
+#Lo que no se visualiza es si hay algún producto que solo pueda estar en 1 caja y es caja ADEMAS no pueda ser utilizada para otros productos
 
 
 
