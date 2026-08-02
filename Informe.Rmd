@@ -1,7 +1,8 @@
 ---
 title: "Data Challenge 2026"
 output: 
-  rmdformats::material
+  rmdformats::material:
+    number_sections: true
 ---
 
 ```{r setup, include=FALSE}
@@ -12,114 +13,230 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Intro
+# Introducción
 
-```{r}
-# Librerias a utilizar
-library(dplyr)
-library(ggplot2)
-library(plotly)
+Bonsai Corp es una empresa de brócoli congelado, en donde los productos se comercializan en un envase primario que contiene al alimento, y estos son colocados en cajas de cartón (envase secundario) para almacenarlos y transportarlos desde 5 plantas hacia 5 regiones distribuidas por el mundo. Esta cajas son apiladas en pallets de 1200 × 800 mm y altura máxima de carga de 1800 mm. Los envíos dentro de la misma región tienen un costo de USD 150 por pallet; los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet.
 
-# Lectura de los data sets
-procurement <- read.csv("Datos modificados/procurement_modificado.csv")
-catalogo_especificaciones <- read.csv("Datos modificados/catalogo_especificaciones.csv")
-catalogo_operaciones <- read.csv("Datos modificados/catalogo_operaciones.csv")
-catalogo_especificaciones_operaciones <- read.csv("Datos modificados/catalogo_especificaciones_operaciones.csv")
-catalogo_especificaciones_procurement <- read.csv("Datos modificados/catalogo_especificaciones_procurement.csv")
-especificaciones_procurement <- read.csv("Datos modificados/especificaciones_procurement.csv")
+El catalogo está compuesto de 427 productos, los cuales cada uno tiene su propia caja, aunque puede existir la posibilidad de que más de un producto tenga un envase secundario con iguales dimensiones. Esta estratégia de packaging durante el último período de tiempo, produjo un catalogo de 204 tipos de cajas distintos, cada uno con su propio molde, sus propias corridas de producción y su propio stock en depósito, generando altos costos de packaging, logística e inventario. Ante cada lanzamiento de un nuevo producto, estos costos siguen en aumento, y la necesidad de hacer algo para bajarlos es imperiosa.
 
-```
+Imagen
 
-```{r}
-# Porcentajes de utilización del pallet
-cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.5, titulo = "") {
-  
-  n <- length(porcentajes)
-  if (is.null(etiquetas)) etiquetas <- paste0("Item ", 1:n)
-  
-  shapes_list <- list()
-  annotations_list <- list()
-  
-  for (i in seq_len(n)) {
-    
-    porcentaje <- max(0, min(100, porcentajes[i]))
-    frac <- porcentaje / 100
-    offset <- (i - 1) * (1 + espacio)
-    
-    shapes_list[[length(shapes_list) + 1]] <- list(
-      type = "rect",
-      x0 = offset, x1 = offset + 1, y0 = 0, y1 = 1,
-      fillcolor = "gray90",
-      line = list(color = "black", width = 2)
-    )
-    
-    shapes_list[[length(shapes_list) + 1]] <- list(
-      type = "rect",
-      x0 = offset + 0.5 - frac/2, x1 = offset + 0.5 + frac/2,
-      y0 = 0.5 - frac/2, y1 = 0.5 + frac/2,
-      fillcolor = "#009587",
-      line = list(width = 0)
-    )
-    
-    annotations_list[[length(annotations_list) + 1]] <- list(
-      x = offset + 0.5, y = 0.5, text = paste0(round(porcentaje), "%"),
-      showarrow = FALSE, font = list(size = 20, color = "black")
-    )
-    
-    # etiqueta debajo, con salto de línea si el texto es largo
-    annotations_list[[length(annotations_list) + 1]] <- list(
-      x = offset + 0.5, y = -0.25, text = gsub(" ", "<br>", etiquetas[i]),
-      showarrow = FALSE, font = list(size = 12, color = "black"),
-      align = "center"
-    )
-  }
-  
-plot_ly(width = 150 * n + 100, height = 350) %>%
-    layout(
-      title = list(text = titulo, font = list(size = 16)),
-      xaxis = list(range = c(-0.3, (n - 1) * (1 + espacio) + 1.3),
-                   showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE,
-                   scaleanchor = "y"),
-      yaxis = list(range = c(-0.5, 1.05),
-                   showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-      shapes = shapes_list,
-      annotations = annotations_list,
-      margin = list(l = 20, r = 20, t = 60, b = 20)
-    ) %>%
-    config(responsive = FALSE)
-}
-```
-
-::: {style="display: flex; justify-content: center;"}
-```{r}
-prom_uti_pallet = mean(catalogo_especificaciones_operaciones$utilizacion)
-
-cuadrados_porcentaje(
-  porcentajes = prom_uti_pallet * 100,
-  etiquetas = "Total",
-  titulo = "Utilización promedio del pallet"
-  )
-```
-:::
-
-Texto de prueba: Bonsai Corp distribuye brócoli congelado a cinco regiones desde cinco plantas, y arrastra un catálogo de cientos de cajas distintas que dispara los costos de packaging, logística e inventario. Tu misión: consolidar ese catálogo, optimizar el uso del pallet y proponer un protocolo que sirva también para los lanzamientos futuros. ¿Te animás al desafío
-
-::: {style="display: flex; justify-content: center;"}
-```{r}
-# Porcentajes de utilización del pallet por categoria
-uti_pallet <- catalogo_especificaciones_operaciones %>%
-  group_by(categoria) %>%
-  summarise(promedio = mean(utilizacion, na.rm = TRUE)) %>%
-  ungroup()
-
-cuadrados_porcentaje(
-  porcentajes = uti_pallet$promedio * 100,
-  etiquetas = uti_pallet$categoria,
-  titulo ="Utilización promedio del pallet por categoría"
-  )
-
-```
-:::
+# Objetivos
 
 
 
+# Los datos
+
+## Bases disponibles
+
+Fueron proporcionadas 4 bases de datos con distinta información relevante para la realización de este trabajo:
+
+-   `catalogo_productos`
+
+El catálogo de productos es la tabla central e incluye un identificador único por SKU, su descripción comercial, peso neto por caja y la clave que lo vincula al tipo de caja asignado. 
+
+<details>
+
+<summary>📂 Variables</summary>
+
+--   `codigo_producto`: id del producto.
+
+--   `descripcion_producto`: descripción del producto.
+
+--   `ingrediente_forma`: forma del brócoli en el producto.
+
+--   `tipo_proyecto`:
+
+--   `subcategoria`: 
+
+--   `tamaño_corte`: 
+
+--   `peso_neto_caja`: 
+
+--   `tamaño_paquete`: 
+
+--  `cantidad_paquetes`: 
+
+--   `peso_neto_paquete`: 
+
+--   `caja_tipo_id`:
+
+</details>
+
+<br>
+
+-   `especificaciones_caja`
+
+Las especificaciones de cajas contienen las dimensiones interiores y exteriores de cada tipo, junto con los parámetros de apilado en pallet. 
+
+<details>
+
+<summary>📂 Variables</summary>
+
+--   `caja_tipo_id`: 
+
+--   `caja_grosor_mm`: 
+
+--   `caja_interior_largo`: 
+
+--   `caja_interior_ancho`: 
+
+--   `caja_interior_alto`: 
+
+--   `caja_exterior_largo`: 
+
+--   `caja_exterior_ancho`: 
+
+--   `caja_exterior_alto`: 
+
+--   `pallet_alto`: 
+
+--   `pallet_ancho`: 
+
+--   `pallet_largo`: 
+
+--   `cantidad_cajas_alto`: 
+
+--   `cantidad_cajas_largo`: 
+
+--   `cantidad_cajas_ancho`: 
+
+--   `cantidad_cajas_total`: 
+
+--   `utilizacion`: 
+
+</details>
+
+<br>
+
+-   `operaciones_planta`
+
+Las operaciones de planta registran los volúmenes anuales por SKU y los costos logísticos asociados. 
+
+<details>
+
+<summary>📂 Variables</summary>
+
+--   `codigo_producto`: 
+
+--   `volumen_producto_canal_servicios_comida`:
+
+--   `volumen_producto_canal_cadenas_corporativas`:
+
+--   `volumen_producto_canal_otros`:
+
+--   `volumen_producto_total`: 
+
+--   `volumen_producto_planta_buenos_aires`:
+
+--   `volumen_producto_planta_curitiba`:
+
+--   `volumen_producto_planta_santiago`:
+
+--   `volumen_producto_planta_monterrey`:
+
+--   `volumen_producto_planta_bakersfield`:
+
+--   `cantidad_pallets_planta_buenos_aires`:
+
+--   `cantidad_pallets_planta_curitiba`:
+
+--   `cantidad_pallets_planta_santiago`:
+
+--   `cantidad_pallets_planta_monterrey`:
+
+--   `cantidad_pallets_planta_bakersfield`:
+
+--   `cantidad_pallets_total`:
+
+--   `costo_total_planta_buenos_aires`:
+
+--   `costo_total_planta_curitiba`:
+
+--   `costo_total_planta_santiago`:
+
+--   `costo_total_planta_monterrey`:
+
+--   `costo_total_planta_bakersfield`:
+
+--   `costo_pallets_planta_buenos_aires`:
+
+--   `costo_pallets_planta_curitiba`:
+
+--   `costo_pallets_planta_santiago`:
+
+--   `costo_pallets_planta_monterrey`:
+
+--   `costo_pallets_planta_bakersfield`:
+
+--   `costo_pallets_total`:
+
+--   `costo_total`:
+
+</details>
+
+<br>
+
+-   `procurement_cajas`
+
+El archivo de compras consolida los volúmenes por tipo de caja y planta, y define los precios unitarios resultantes de aplicar el grosor del cartón y el descuento por volumen correspondiente.
+
+<details>
+
+<summary>📂 Variables</summary>
+
+--   `caja_tipo_id`: 
+
+--   `volumen_tipo_planta_buenos_aires`:
+
+--   `volumen_tipo_planta_curitiba`:
+
+--   `volumen_tipo_planta_santiago`:
+
+--   `volumen_tipo_planta_monterrey`: 
+
+--   `volumen_tipo_planta_bakersfield`:
+
+--   `costo_unitario_base`:
+
+--   `costo_total_base`:
+
+--   `costo_unitario_planta_buenos_aires`:
+
+--   `costo_unitario_planta_curitiba`:
+
+--   `costo_unitario_planta_santiago`:
+
+--   `costo_unitario_planta_monterrey`:
+
+--   `costo_unitario_planta_bakersfield`:
+
+--   `descuento_planta_buenos_aires`:
+
+--   `descuento_planta_curitiba`:
+
+--   `descuento_planta_santiago`:
+
+--   `descuento_planta_monterrey`:
+
+--   `descuento_planta_bakersfield`:
+
+--   `costo_por_pallet`:
+
+</details>
+
+## Perprocesamiento
+
+### Imputación de datos faltantes
+
+### Creación de variables
+
+# Desarrollo
+
+## Análisis descriptivo
+
+## Técnicas aplicadas
+
+## Resultados
+
+# Conclusiones y propuestas de mejoras
