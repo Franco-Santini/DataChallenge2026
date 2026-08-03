@@ -5,11 +5,11 @@ library(stringr)
 
 # Conjuntos de datos
 catalogo <- read.csv("Data/catalogo_productos.csv")
-especificaciones_caja <- read.csv("Datos/especificaciones_cajas.csv")
+especificaciones_caja <- read.csv("Data/especificaciones_cajas.csv")
 operaciones <- read.csv("Data/operaciones_planta.csv")
 procurement <- read.csv("Data/procurement_cajas.csv")
 
-## Tabla ECT (N/m) por grosor de cartón
+## Tabla ECT (N/m) por grosor de cartón para calcular carga max
 ect_tabla <- tibble(
   grosor = c(2.5, 2.7, 3.0, 4.1, 4.5, 4.6, 4.7, 4.8, 5.0),
   ect_n_m = c(600, 730, 1000, 1200, 1400, 1450, 1500, 1550, 1650)
@@ -17,6 +17,7 @@ ect_tabla <- tibble(
 
 G <- 9.81 # Constante 
 
+# Tabla precio base x grosor
 precio_base_grosor <- tibble(
   grosor = c(3.0, 4.5, 5.0),
   precio_base_usd = c(0.60, 0.65, 0.70)
@@ -29,10 +30,12 @@ colSums(is.na(operaciones)) # No tiene datos faltantes
 colSums(is.na(procurement)) # No tiene datos faltantes
 
 ###############------------- Completamos el conjunto de datos de catalogo -------------###############
+# Seleccionar columnas de utilidad y filtrar por cantidad_paquetes faltantes
 paquetes_faltantes <- catalogo |> 
   select(codigo_producto, tamaño_paquete, cantidad_paquetes) |> 
   filter(is.na(cantidad_paquetes))
 
+# Seleccionar columnas de utilidad y filtrar por peso_neto_paquete faltante
 peso_neto_faltantes <- catalogo |> 
   select(codigo_producto, tamaño_paquete, peso_neto_paquete) |> 
   filter(is.na(peso_neto_paquete))
@@ -84,12 +87,13 @@ catalogo <- catalogo |>
 colSums(is.na(catalogo)) # No hay más datos faltantes
 
 ###############------------- Completamos el conjunto de datos de especificaciones de cajas -------------###############
+# Seleccionar columnas de utilidad y filtrar por cantidad_cajas_total faltantes
 total_cajas_faltantes <- especificaciones_caja |> 
   select(caja_tipo_id, cantidad_cajas_alto, cantidad_cajas_largo, cantidad_cajas_ancho, cantidad_cajas_total) |> 
   filter(is.na(cantidad_cajas_total)) |> 
   mutate(cantidad_cajas_total = cantidad_cajas_alto * cantidad_cajas_largo * cantidad_cajas_ancho)
 
-# Reemplazamos los faltantes con los totales
+# Reemplazamos las cajas faltantes con los totales
 especificaciones_caja <- especificaciones_caja |> 
   left_join(total_cajas_faltantes, by = "caja_tipo_id", suffix = c("", "_cat")) |> 
   mutate(
@@ -110,6 +114,7 @@ especificaciones_caja <- especificaciones_caja |>
   relocate(id_sencillo, .before = caja_tipo_id)
 
 ###############------------- Trabajamos sobre el conjunto de datos procurement -------------###############
+# Función para dejar los descuentos en formato numérico
 regex_pct <- function(x) {
   x |> 
     str_remove_all("%") |> 
@@ -118,16 +123,19 @@ regex_pct <- function(x) {
     as.numeric()
 }
 
-# Plantas
+# Plantas de operaciones
 plantas <- c("buenos_aires", "curitiba", "santiago", "monterrey", "bakersfield")
 
+# Aplicamos la función que encuentra expresiones regulares para pasar los descuentos de formato caracter a numérico
 procurement2 <- procurement |> 
   mutate(across(all_of(paste0("descuento_planta_", plantas)), regex_pct)) |> 
   mutate(across(all_of(paste0("costo_unitario_planta_", plantas)), as.numeric))
 
+# Filtrar por aquellos costos unitarios faltantes
 costos_unitarios_faltantes <- procurement2 |> 
   filter(if_any(paste0("costo_unitario_planta_", plantas), is.na))
 
+# Imputar aquellos costos unitarios faltantes por su valor correspondiente
 costos_unitarios_faltantes <- costos_unitarios_faltantes |> 
   mutate(
     costo_unitario_planta_bakersfield = ifelse(is.na(costo_unitario_planta_bakersfield), costo_unitario_base * (1 + descuento_planta_bakersfield/100), costo_unitario_planta_bakersfield),
@@ -151,6 +159,7 @@ procurement2 <- procurement2 |>
   select(-ends_with("_cat"))
 
 ###############------------- Feature Engineering a nivel Caja -------------###############
+# Crear algunas variables que puedan resultar de interes
 especificaciones_caja <- especificaciones_caja |> 
   mutate(
     volumen_interior_caja_mm3 = caja_interior_largo * caja_interior_ancho * caja_interior_alto,
@@ -194,7 +203,7 @@ catalogo_especificaciones_operaciones <- catalogo |>
     utilizacion_cajas = volumen_producto_total / volumen_interior_caja_mm3
   )
 
-###############------------- Guardamos los datos -------------###############
+###############------------- Guardamos los datos para su posterior uso -------------###############
 write.csv(procurement2, "Datos modificados/procurement_modificado.csv", row.names = FALSE)
 write.csv(catalogo_especificaciones_operaciones, "Datos modificados/catalogo_especificaciones_operaciones.csv", row.names = FALSE)
 write.csv(especificaciones_caja, "Datos modificados/especificaciones_caja.csv", row.names = FALSE)
