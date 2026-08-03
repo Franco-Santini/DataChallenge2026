@@ -4,12 +4,6 @@ import numpy as np
 import pandas as pd
 from ortools.sat.python import cp_model
 
-GROSOR_GLOBAL = [3.0]
-
-RUTA_INCUMBENTE = (
-    OUTPUT_DIR / "runs" / "k40_4h" / "solucion_base.csv"
-)
-
 TIEMPO_SEGUNDOS = 8 * 60 * 60
 SEMILLA = 17
 
@@ -25,6 +19,12 @@ DIMENSIONES_CAJA = [
 
 DATA_PATH = Path("Datos modificados/catalogo_especificaciones_operaciones.csv")
 OUTPUT_DIR = Path("outputs")
+
+GROSOR_GLOBAL = [3.0]
+
+RUTA_INCUMBENTE = (
+    OUTPUT_DIR / "runs" / "k40_4h" / "solucion_base.csv"
+)
 
 PLANTAS = [
     "buenos_aires",
@@ -370,7 +370,7 @@ def resolver_mip_flete_packaging(grosor: float) -> dict:
     solver.parameters.num_search_workers = 8
     solver.parameters.random_seed = SEMILLA
     solver.parameters.log_search_progress = False
-    
+
     estado = solver.solve(modelo)
 
     if estado not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
