@@ -2,6 +2,7 @@
 library(dplyr)
 library(ggplot2)
 library(plotly)
+library(scales)
 
 # Lectura de los data sets
 procurement <- read.csv("Datos modificados/procurement_modificado.csv")
@@ -93,7 +94,7 @@ catalogo_especificaciones_operaciones |>
   theme(axis.text.x = element_text(angle = 90))
 
 # Cruces de las dimensiones de las cajas
-plot_ly(data = especificaciones_caja, x = ~caja_interior_ancho, y = ~caja_interior_largo, z = ~caja_interior_alto,
+plot_ly(data = especificaciones_procurement, x = ~caja_interior_ancho, y = ~caja_interior_largo, z = ~caja_interior_alto,
         type = 'scatter3d', mode = 'markers')
 
 # Grosor de la caja que mayor soporta el peso de las cargas
@@ -197,6 +198,58 @@ cuadrados_porcentaje(
   etiquetas = uti_pallet$categoria,
   titulo ="Utilización promedio del pallet por categoría"
 )
+
+# Descuentos por planta
+
+g1 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_buenos_aires,
+      text = paste0("Descuento: ", after_stat(x),
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587") +
+  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_buenos_aires) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Buenos Aires") +
+  theme_bw()
+ggplotly(g1, tooltip = "text")
+
+g2 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_curitiba,
+      text = paste0("Descuento: ", after_stat(x),
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587") +
+  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_curitiba) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Curitiba") +
+  theme_bw()
+ggplotly(g2, tooltip = "text")
+
+g3 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_santiago,
+      text = paste0("Descuento: ", after_stat(x),
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587") +
+  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_santiago) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Santiago") +
+  theme_bw()
+ggplotly(g3, tooltip = "text")
+
+g4 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_monterrey,
+      text = paste0("Descuento: ", after_stat(x),
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587") +
+  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_monterrey) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Monterrey") +
+  theme_bw()
+ggplotly(g4, tooltip = "text")
+
+g5 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_bakersfield,
+      text = paste0("Descuento: ", after_stat(x),
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587") +
+  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_bakersfield) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Bakersfield") +
+  theme_bw()
+ggplotly(g5, tooltip = "text")
 
 ######################### EDA Asociado al costo total #########################
 # Costo total por planta
