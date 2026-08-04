@@ -17,7 +17,11 @@ knitr::opts_chunk$set(
 
 Bonsai Corp es una empresa de brócoli congelado, en donde los productos se comercializan en un envase primario que contiene al alimento, y estos son colocados en cajas de cartón (envase secundario) para almacenarlos y transportarlos desde 5 plantas hacia 5 regiones distribuidas por el mundo. Esta cajas son apiladas en pallets de 1200 × 800 mm y altura máxima de carga de 1800 mm. Los envíos dentro de la misma región tienen un costo de USD 150 por pallet; los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet.
 
-El catalogo está compuesto de 427 productos, los cuales cada uno tiene su propia caja, aunque puede existir la posibilidad de que más de un producto tenga un envase secundario con iguales dimensiones. Esta estratégia de packaging durante el último período de tiempo, produjo un catalogo de 204 tipos de cajas distintos, cada uno con su propio molde, sus propias corridas de producción y su propio stock en depósito, generando altos costos de packaging, logística e inventario. Ante cada lanzamiento de un nuevo producto, estos costos siguen en aumento, y la necesidad de hacer algo para bajarlos es imperiosa.
+El catalogo está compuesto de 427 productos, cada uno de los cuales tiene asignado un tipo de caja de acuerdo con sus características. Si bien algunos productos comparten el mismo envase secundario, actualmente se utilizan 204 tipos de caja diferentes. La incorporación progresiva de nuevos productos y diseños dio lugar a un portafolio de packaging altamente fragmentado, en el que cada tipo de caja requiere su propio molde, corridas de producción y espacio de almacenamiento, generando *altos costos de packaging, logística e inventario*. Ante cada lanzamiento de un nuevo producto, estos costos siguen en aumento, y la necesidad de hacer algo para bajarlos es imperiosa.
+
+<p align="center">
+<img src="img/brocoli.jpg" width="400"/>
+</p>
 
 # Objetivos
 
@@ -36,11 +40,25 @@ $C_{packaging} = costo \: por \: caja * volumen \: anual$, aplicando los descuen
 - Tier 4 (100.000–499.999 unidades): descuento del 20 %
 - Tier 5 (≥ 500.000 unidades): descuento del 30 %
 
-En cuanto al precio base por caja, se establecieron tres grosores estandarizados y homologados por Bonsai Corp, los cuales son: 3,0 mm, 4,5 mm y 5,0 mm y el precio de la caja según del grosor del cartón son: USD 0,60 para 3,0mm, USD 0,65 para 4,5mm y USD 0,70 para 5mm. La solución debe adoptar un único grosor de forma uniforme para todos los tipos de caja; no se permiten valores intermedios ni mezclas entre tipos. 
+En cuanto al precio base por caja, se establecieron tres grosores estandarizados y homologados por Bonsai Corp, los cuales son: 3,0 mm, 4,5 mm y 5,0 mm y el precio de la caja según del grosor del cartón son: USD 0,60 para 3,0mm, USD 0,65 para 4,5mm y USD 0,70 para 5mm. La solución debe adoptar un único grosor de forma uniforme para todos los tipos de caja; no se permiten valores intermedios ni mezclas entre tipos.
+
+$C_{flete} = \sum_{p=1}^{5}cantidad \: de \: pallets_p * costo \: de \: envio \: _p \quad p = planta$, variando el precio según el destino.
+
+Los envíos dentro de la misma región tienen un costo de USD 150 por pallet, mientras que los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet.
 
 ## Objetivo secundario
 
-Como objetivo complementario, se busca analizar y cuantificar el *trade-off* entre la reducción de la cantidad de tipos de caja y la utilización del pallet. La consolidación de productos en un menor número de envases puede generar pérdidas de eficiencia logística para determinados productos al disminuir el aprovechamiento del espacio disponible en el pallet, generando mayores costos de flete. Por lo tanto, además de minimizar el costo total, la solución debe evaluar este equilibrio y proponer una alternativa que optimice simultáneamente el nivel de estandarización del packaging y la eficiencia del transporte.
+Como objetivo secundario, se busca reducir la cantidad de tipos de caja utilizados y optimizar el aprovechamiento físico de las cajas y los pallets, sin deteriorar el costo total alcanzado. En caso de existir distintas soluciones con un costo total equivalente, se preferirá aquella que utilice una menor cantidad de tipos de caja y presente mejores niveles de utilización.
+
+Para evaluar estos aspectos, se utilizarán como métricas de seguimiento:
+
+-   $N_{tipos}$: cantidad de tipos de caja distintos utilizados en la solución final.
+
+-   $U_{caja}$ : proporción del volumen interno de la caja efectivamente ocupada por el producto.
+
+-   $U_{pallet}$: proporción del volumen disponible del pallet ocupada por las cajas transportadas.
+
+Estas métricas permitirán analizar si la reducción de costos se acompaña de una verdadera consolidación del catálogo y de un uso eficiente del espacio disponible.
 
 ## Restricciones del problema
 
@@ -48,16 +66,16 @@ Como objetivo complementario, se busca analizar y cuantificar el *trade-off* ent
 
 - **Headspace máximo:** el espacio libre entre el producto y las paredes de la caja no tiene un mínimo exigido, pero sí un máximo permitido según el grosor del cartón: 6% para cajas de hasta 3,0 mm, 8% para cajas de hasta 4,5 mm y 10% para cajas de más de 4,5 mm, con un límite absoluto de 40 mm por eje.
 
-- **Dimensiones mínimas de la caja:** las dimensiones internas actuales de cada caja representan el tamaño mínimo necesario para contener el producto y no pueden reducirse.
+- **Dimensiones mínimas de la caja:** las dimensiones internas actuales de cada caja representan el tamaño mínimo necesario para contener el producto.
 
 - **Pallet estándar:** todas las plantas utilizan un único tipo de pallet con dimensiones de 1200 × 800 mm y una altura máxima de carga de 1800 mm. La solución debe determinar cuántas cajas entran por pallet para cada tipo de caja propuesto.
 
 - **Un solo producto por pallet:** no se permite mezclar productos distintos en un mismo pallet, aunque diferentes productos sí pueden compartir un mismo tipo de caja.
 
-- **Método de apilado fijo:** se asume únicamente apilado por columnas (column stacking), con cajas alineadas y sin trabado, para todos los productos.
+- **Método de apilado fijo:** se asume únicamente apilado por columnas (*column stacking*), con cajas alineadas y sin trabado, para todos los productos.
 
 <p align="center">
-  <img src="column_stacking.png" width="170">
+  <img src="img/column_stacking.png" width="170">
 </p>
 
 - **Resistencia a compresión:** cada caja debe soportar la carga generada por las capas superiores del pallet. La carga máxima admisible se calcula a partir del valor de ECT (*Edge Crush Test*) correspondiente al grosor seleccionado y del perímetro de la caja.
@@ -278,6 +296,8 @@ El archivo de compras consolida los volúmenes por tipo de caja y planta, y defi
 
 ## Análisis descriptivo
 
+Como paso previo a proponer diferentes formas de optimización, interesa saber cómo es la situación actual de la empresa en cuanto a los costos, los volumenes de ventas, las dimensiones de las cajas, la utilización de los pallets, entre otras cosas. Esto permitirá tener un panorama amplio del estado de la empresa, y ayudará a la hora de la toma de decisiones y para luego realizar comparaciones.
+
 ```{r}
 
 library(dplyr)
@@ -292,12 +312,11 @@ catalogo_especificaciones_operaciones <- read.csv("Datos modificados/catalogo_es
 catalogo_especificaciones_procurement <- read.csv("Datos modificados/catalogo_especificaciones_procurement.csv")
 especificaciones_procurement <- read.csv("Datos modificados/especificaciones_procurement.csv")
 
-G = 9.81
-
 ```
 
 
-```{r, fig.width=6, fig.height=5}
+
+```{r, fig.width=6, fig.height=5, fig.align='center'}
 
 # Cantidad de productos por tipo de caja
 g1 = catalogo_especificaciones_operaciones |> 
@@ -312,35 +331,264 @@ g1 = catalogo_especificaciones_operaciones |>
                     "<br>Cantidad de cajas: ", after_stat(count))) +
   geom_bar(color = "black", fill = "#009587") +
   scale_x_continuous(breaks = 1:10, limits = c(0.5, 10.5)) +
-  labs(x = "Productos por caja", y = "Cantidad de cajas", title = "Distribución de la cantidad de cajas según los productos que las usan") +
-  theme_bw() +
-  theme(plot.title = element_text(size = 11))
+  labs(x = "Productos por caja", y = "Cantidad de cajas", title = "Distribución de la cantidad de productos por caja") +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5, size = 12),
+        panel.grid = element_blank())
 
-ggplotly(g1, tooltip = "text")
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g1, tooltip = "text")
+)
+
+cajas_compartidas <- catalogo_especificaciones %>%
+  group_by(caja_tipo_id) %>%
+  summarise(cantidad_productos = n_distinct(codigo_producto)) %>%
+  filter(cantidad_productos > 1)
+
+cat("Hay", nrow(cajas_compartidas), "cajas compartidas")
+
+```
+
+```{r, fig.width=6, fig.height=5, fig.align='center'}
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  plot_ly(data = especificaciones_procurement, x = ~caja_interior_ancho, y = ~caja_interior_largo, z = ~caja_interior_alto,
+          type = 'scatter3d', mode = 'markers',
+          marker = list(color = '#009587', size = 4)) %>%
+    layout(
+      title = "Dimensiones interiores de las cajas",
+      scene = list(
+        xaxis = list(title = "Ancho", showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+                     backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
+        yaxis = list(title = "Largo", showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+                     backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
+        zaxis = list(title = "Alto", showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+                     backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE)
+      )
+    )
+)
 
 ```
 
 ```{r}
 
-plot_ly(data = especificaciones_procurement, x = ~caja_interior_ancho, y = ~caja_interior_largo, z = ~caja_interior_alto,
-        type = 'scatter3d', mode = 'markers',
-        marker = list(color = '#009587', size = 4)) %>%
-  layout(
-    title = "Dimensiones interiores de las cajas",
-    scene = list(
-      xaxis = list(showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
-                   backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
-      yaxis = list(showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
-                   backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
-      zaxis = list(showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
-                   backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE)
+# Porcentajes de utilización del pallet
+cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.5, titulo = "") {
+  
+  n <- length(porcentajes)
+  if (is.null(etiquetas)) etiquetas <- paste0("Item ", 1:n)
+  
+  shapes_list <- list()
+  annotations_list <- list()
+  
+  for (i in seq_len(n)) {
+    
+    porcentaje <- max(0, min(100, porcentajes[i]))
+    frac <- porcentaje / 100
+    offset <- (i - 1) * (1 + espacio)
+    
+    shapes_list[[length(shapes_list) + 1]] <- list(
+      type = "rect",
+      x0 = offset, x1 = offset + 1, y0 = 0, y1 = 1,
+      fillcolor = "gray90",
+      line = list(color = "black", width = 2)
     )
+    
+    shapes_list[[length(shapes_list) + 1]] <- list(
+      type = "rect",
+      x0 = offset + 0.5 - frac/2, x1 = offset + 0.5 + frac/2,
+      y0 = 0.5 - frac/2, y1 = 0.5 + frac/2,
+      fillcolor = "#009587",
+      line = list(width = 0)
+    )
+    
+    annotations_list[[length(annotations_list) + 1]] <- list(
+      x = offset + 0.5, y = 0.5, text = paste0(round(porcentaje), "%"),
+      showarrow = FALSE, font = list(size = 20, color = "black")
+    )
+    
+    annotations_list[[length(annotations_list) + 1]] <- list(
+      x = offset + 0.5, y = -0.25, text = gsub(" ", "<br>", etiquetas[i]),
+      showarrow = FALSE, font = list(size = 12, color = "black"),
+      align = "center"
+    )
+  }
+  
+  plot_ly(width = 250 * n + 100, height = 350) %>%
+    layout(
+      title = list(text = titulo, font = list(size = 16), x = 0.5),
+      xaxis = list(range = c(-0.3, (n - 1) * (1 + espacio) + 1.3),
+                   showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE,
+                   scaleanchor = "y"),
+      yaxis = list(range = c(-0.5, 1.05),
+                   showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+      shapes = shapes_list,
+      annotations = annotations_list,
+      margin = list(l = 20, r = 20, t = 60, b = 20)
+    ) %>%
+    config(responsive = FALSE)
+}
+
+prom_uti_pallet = mean(catalogo_especificaciones_operaciones$utilizacion)
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  cuadrados_porcentaje(
+    porcentajes = prom_uti_pallet * 100,
+    etiquetas = "Total",
+    titulo = "Utilización promedio del pallet"
   )
+)
 
 
 ```
 
+```{r, fig.width=6, fig.height=5, fig.align='center'}
 
+# Descuentos por planta
+
+g2 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_buenos_aires,
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587", width = 8) +
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_buenos_aires),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Buenos Aires") +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.grid = element_blank())
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g2, tooltip = "text")
+)
+
+g3 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_curitiba,
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587", width = 8) +
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_curitiba),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Curitiba") +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.grid = element_blank())
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g3, tooltip = "text")
+)
+
+g4 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_santiago,
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587", width = 8) +
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_santiago),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Santiago") +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.grid = element_blank())
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g4, tooltip = "text")
+)
+
+g5 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_monterrey,
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587", width = 8) +
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_monterrey),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Monterrey") + 
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.grid = element_blank()) 
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g5, tooltip = "text")
+)
+
+g6 = ggplot(especificaciones_procurement) +
+  aes(x = descuento_planta_bakersfield,
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+                    "<br>Cantidad: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587", width = 8) +
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_bakersfield),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Bakersfield") +
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.grid = element_blank())
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g6, tooltip = "text")
+)
+
+```
+
+```{r, fig.width=6, fig.height=5, fig.align='center'}
+
+# Costo total por planta
+costo_por_planta1 <- colSums(catalogo_especificaciones_operaciones |> select(costo_total_planta_bakersfield,
+                                                                            costo_total_planta_buenos_aires,
+                                                                            costo_total_planta_curitiba,
+                                                                            costo_total_planta_monterrey,
+                                                                            costo_total_planta_santiago)) 
+
+costo_por_planta2 <- colSums(catalogo_especificaciones_operaciones |> select(costo_pallets_planta_bakersfield,
+                                                                             costo_pallets_planta_buenos_aires,
+                                                                             costo_pallets_planta_curitiba,
+                                                                             costo_pallets_planta_monterrey,
+                                                                             costo_pallets_planta_santiago)) 
+
+costo_por_planta = costo_por_planta1 + costo_por_planta2
+                                                                     
+costo_por_planta_df = data.frame(planta = names(costo_por_planta), costos = costo_por_planta, row.names = NULL)
+costo_por_planta_df$planta = recode(costo_por_planta_df$planta, "costo_total_planta_bakersfield" = "Bakersfield", 
+                                                                "costo_total_planta_buenos_aires" = "Buenos Aires", 
+                                                                "costo_total_planta_curitiba" = "Curitiba", 
+                                                                "costo_total_planta_monterrey" = "Monterrey", 
+                                                                "costo_total_planta_santiago" = "Santiago")
+
+g7 = ggplot(costo_por_planta_df) +
+      aes(x = reorder(planta, -costos), y = costos, text = paste0("Planta: ", planta, "<br>Costo: ", comma(costos))) +
+      geom_col(color = "black", fill = "#009587", width = 0.7) +
+      scale_y_continuous(labels = label_number(scale = 1e-6, suffix = " mill.")) +
+      labs(x = "Planta", y = "Costos", title = "Costos totales por planta") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5),
+            panel.grid = element_blank())
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g7, tooltip = "text")
+)
+
+# Costo total de todos los productos vendidos en la situación actual
+costo_total_actual <- sum(catalogo_especificaciones_operaciones$costo_total) + sum(catalogo_especificaciones_operaciones$costo_pallets_total)
+cat("El costo total de la situación actual es de:", costo_total_actual, "USD")
+
+```
 
 
 ## Técnicas aplicadas
