@@ -15,17 +15,29 @@ especificaciones_procurement <- read.csv("Datos modificados/especificaciones_pro
 G = 9.81
 ################------------------- Gráfico posibles -------------------################
 # Cantidad de productos por tipo de caja
-catalogo_especificaciones_operaciones |> 
+g2 = catalogo_especificaciones_operaciones |> 
   group_by(caja_tipo_id) |> 
   summarise(
     n_prod = n_distinct(codigo_producto)
   ) |> 
   ungroup() |> 
   ggplot() +
-  aes(x = n_prod) +
+  aes(x = n_prod,
+      text = paste0("Productos por caja: ", after_stat(x),
+                    "<br>Cantidad de cajas: ", after_stat(count))) +
   geom_bar(color = "black", fill = "#009587") +
-  labs(x = "Productos por caja", y = "Cantidad") +
+  scale_x_continuous(breaks = 1:10, limits = c(0.5, 10.5)) +
+  labs(x = "Productos por caja", y = "Cantidad de cajas", title = "Distribución de la cantidad de cajas según los productos que las usan") +
   theme_bw()
+
+ggplotly(g2, tooltip = "text")
+
+cajas_compartidas <- catalogo_especificaciones %>%
+  group_by(caja_tipo_id) %>%
+  summarise(cantidad_productos = n_distinct(codigo_producto)) %>%
+  filter(cantidad_productos > 1)
+
+print(paste("Hay", nrow(cajas_compartidas), "cajas compartidas"))
 
 # Cantidad de productos segun categoria
 catalogo_especificaciones_operaciones |> 
@@ -95,7 +107,20 @@ catalogo_especificaciones_operaciones |>
 
 # Cruces de las dimensiones de las cajas
 plot_ly(data = especificaciones_procurement, x = ~caja_interior_ancho, y = ~caja_interior_largo, z = ~caja_interior_alto,
-        type = 'scatter3d', mode = 'markers')
+        type = 'scatter3d', mode = 'markers',
+        marker = list(color = '#009587', size = 4)) %>%
+  layout(
+    title = "Dimensiones interiores de las cajas",
+    scene = list(
+      xaxis = list(showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+                   backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
+      yaxis = list(showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+                   backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
+      zaxis = list(showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+                   backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE)
+    )
+  )
+
 
 # Grosor de la caja que mayor soporta el peso de las cargas
 catalogo_especificaciones_operaciones |> 
@@ -203,53 +228,70 @@ cuadrados_porcentaje(
 
 g1 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_buenos_aires,
-      text = paste0("Descuento: ", after_stat(x),
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
   geom_bar(color = "black", fill = "#009587") +
-  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_buenos_aires) +
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_buenos_aires),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Buenos Aires") +
   theme_bw()
 ggplotly(g1, tooltip = "text")
 
 g2 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_curitiba,
-      text = paste0("Descuento: ", after_stat(x),
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
   geom_bar(color = "black", fill = "#009587") +
-  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_curitiba) +
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_curitiba),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Curitiba") +
   theme_bw()
 ggplotly(g2, tooltip = "text")
 
 g3 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_santiago,
-      text = paste0("Descuento: ", after_stat(x),
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
   geom_bar(color = "black", fill = "#009587") +
-  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_santiago) +
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_santiago),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Santiago") +
   theme_bw()
 ggplotly(g3, tooltip = "text")
 
 g4 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_monterrey,
-      text = paste0("Descuento: ", after_stat(x),
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
   geom_bar(color = "black", fill = "#009587") +
-  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_monterrey) +
-  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Monterrey") +
-  theme_bw()
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_monterrey),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
+  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Monterrey") + 
+  theme_bw() 
 ggplotly(g4, tooltip = "text")
 
 g5 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_bakersfield,
-      text = paste0("Descuento: ", after_stat(x),
+      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
   geom_bar(color = "black", fill = "#009587") +
-  scale_x_continuous(breaks = especificaciones_procurement$descuento_planta_bakersfield) +
+  scale_x_continuous(
+    breaks = unique(especificaciones_procurement$descuento_planta_bakersfield),
+    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+  ) +
   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Bakersfield") +
   theme_bw()
 ggplotly(g5, tooltip = "text")
+
+
 
 ######################### EDA Asociado al costo total #########################
 # Costo total por planta

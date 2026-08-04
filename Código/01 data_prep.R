@@ -158,6 +158,13 @@ procurement2 <- procurement2 |>
   ) |> 
   select(-ends_with("_cat"))
 
+# Cambiamos el signo de algunos descuentos que estan al reves
+
+columnas <- c("descuento_planta_buenos_aires", "descuento_planta_curitiba", "descuento_planta_santiago", "descuento_planta_monterrey", "descuento_planta_bakersfield")
+
+procurement2 <- procurement2 %>%
+  mutate(across(all_of(columnas), ~ ifelse(. %in% c(20, 30), -., .)))
+
 ###############------------- Feature Engineering a nivel Caja -------------###############
 # Crear algunas variables que puedan resultar de interes
 especificaciones_caja <- especificaciones_caja |> 

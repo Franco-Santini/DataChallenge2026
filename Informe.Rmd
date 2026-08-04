@@ -278,8 +278,76 @@ El archivo de compras consolida los volúmenes por tipo de caja y planta, y defi
 
 ## Análisis descriptivo
 
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(scales)
+
+procurement <- read.csv("Datos modificados/procurement_modificado.csv")
+catalogo_especificaciones <- read.csv("Datos modificados/catalogo_especificaciones.csv")
+catalogo_operaciones <- read.csv("Datos modificados/catalogo_operaciones.csv")
+catalogo_especificaciones_operaciones <- read.csv("Datos modificados/catalogo_especificaciones_operaciones.csv")
+catalogo_especificaciones_procurement <- read.csv("Datos modificados/catalogo_especificaciones_procurement.csv")
+especificaciones_procurement <- read.csv("Datos modificados/especificaciones_procurement.csv")
+
+G = 9.81
+
+```
+
+
+```{r, fig.width=6, fig.height=5}
+
+# Cantidad de productos por tipo de caja
+g1 = catalogo_especificaciones_operaciones |> 
+  group_by(caja_tipo_id) |> 
+  summarise(
+    n_prod = n_distinct(codigo_producto)
+  ) |> 
+  ungroup() |> 
+  ggplot() +
+  aes(x = n_prod,
+      text = paste0("Productos por caja: ", after_stat(x),
+                    "<br>Cantidad de cajas: ", after_stat(count))) +
+  geom_bar(color = "black", fill = "#009587") +
+  scale_x_continuous(breaks = 1:10, limits = c(0.5, 10.5)) +
+  labs(x = "Productos por caja", y = "Cantidad de cajas", title = "Distribución de la cantidad de cajas según los productos que las usan") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 11))
+
+ggplotly(g1, tooltip = "text")
+
+```
+
+```{r}
+
+plot_ly(data = especificaciones_procurement, x = ~caja_interior_ancho, y = ~caja_interior_largo, z = ~caja_interior_alto,
+        type = 'scatter3d', mode = 'markers',
+        marker = list(color = '#009587', size = 4)) %>%
+  layout(
+    title = "Dimensiones interiores de las cajas",
+    scene = list(
+      xaxis = list(showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+                   backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
+      yaxis = list(showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+                   backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
+      zaxis = list(showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+                   backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE)
+    )
+  )
+
+
+```
+
+
+
+
 ## Técnicas aplicadas
 
 ## Resultados
 
 # Conclusiones y propuestas de mejoras
+
+
+
