@@ -28,7 +28,8 @@ g2 = catalogo_especificaciones_operaciones |>
   geom_bar(color = "black", fill = "#009587") +
   scale_x_continuous(breaks = 1:10, limits = c(0.5, 10.5)) +
   labs(x = "Productos por caja", y = "Cantidad de cajas", title = "Distribución de la cantidad de cajas según los productos que las usan") +
-  theme_bw()
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5))
 
 ggplotly(g2, tooltip = "text")
 
@@ -230,76 +231,89 @@ g1 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_buenos_aires,
       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587") +
+  geom_bar(color = "black", fill = "#009587", width = 0.7) +
   scale_x_continuous(
     breaks = unique(especificaciones_procurement$descuento_planta_buenos_aires),
     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
   ) +
   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Buenos Aires") +
-  theme_bw()
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5))
 ggplotly(g1, tooltip = "text")
 
 g2 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_curitiba,
       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587") +
+  geom_bar(color = "black", fill = "#009587", width = 0.7) +
   scale_x_continuous(
     breaks = unique(especificaciones_procurement$descuento_planta_curitiba),
     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
   ) +
   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Curitiba") +
-  theme_bw()
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5))
 ggplotly(g2, tooltip = "text")
 
 g3 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_santiago,
       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587") +
+  geom_bar(color = "black", fill = "#009587", width = 0.7) +
   scale_x_continuous(
     breaks = unique(especificaciones_procurement$descuento_planta_santiago),
     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
   ) +
   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Santiago") +
-  theme_bw()
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5))
 ggplotly(g3, tooltip = "text")
 
 g4 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_monterrey,
       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587") +
+  geom_bar(color = "black", fill = "#009587", width = 0.7) +
   scale_x_continuous(
     breaks = unique(especificaciones_procurement$descuento_planta_monterrey),
     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
   ) +
   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Monterrey") + 
-  theme_bw() 
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5)) 
 ggplotly(g4, tooltip = "text")
 
 g5 = ggplot(especificaciones_procurement) +
   aes(x = descuento_planta_bakersfield,
       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
                     "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587") +
+  geom_bar(color = "black", fill = "#009587", width = 0.7) +
   scale_x_continuous(
     breaks = unique(especificaciones_procurement$descuento_planta_bakersfield),
     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
   ) +
   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Bakersfield") +
-  theme_bw()
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5))
 ggplotly(g5, tooltip = "text")
 
 
 
 ######################### EDA Asociado al costo total #########################
 # Costo total por planta
-costo_por_planta <- colSums(catalogo_especificaciones_operaciones |> select(costo_total_planta_bakersfield,
+costo_por_planta1 <- colSums(catalogo_especificaciones_operaciones |> select(costo_total_planta_bakersfield,
                                                                             costo_total_planta_buenos_aires,
                                                                             costo_total_planta_curitiba,
                                                                             costo_total_planta_monterrey,
                                                                             costo_total_planta_santiago)) 
+
+costo_por_planta2 <- colSums(catalogo_especificaciones_operaciones |> select(costo_pallets_planta_bakersfield,
+                                                                             costo_pallets_planta_buenos_aires,
+                                                                             costo_pallets_planta_curitiba,
+                                                                             costo_pallets_planta_monterrey,
+                                                                             costo_pallets_planta_santiago)) 
+
+costo_por_planta = costo_por_planta1 + costo_por_planta2
                                                                      
 costo_por_planta_df = data.frame(planta = names(costo_por_planta), costos = costo_por_planta, row.names = NULL)
 costo_por_planta_df$planta = recode(costo_por_planta_df$planta, "costo_total_planta_bakersfield" = "Bakersfield", 
@@ -310,14 +324,15 @@ costo_por_planta_df$planta = recode(costo_por_planta_df$planta, "costo_total_pla
 
 g1 = ggplot(costo_por_planta_df) +
       aes(x = reorder(planta, -costos), y = costos, text = paste0("Planta: ", planta, "<br>Costo: ", comma(costos))) +
-      geom_col(color = "black", fill = "#009587") +
+      geom_col(color = "black", fill = "#009587", width = 0.7) +
       scale_y_continuous(labels = label_number(scale = 1e-6, suffix = " mill.")) +
-      labs(x = "Planta", y = "Costos") +
-      theme_bw()
+      labs(x = "Planta", y = "Costos", title = "Costos totales por planta") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5))
 ggplotly(g1, tooltip = "text")
 
 # Costo total de todos los productos vendidos en la situación actual
-costo_total_actual <- sum(catalogo_especificaciones_operaciones$costo_total)
+costo_total_actual <- sum(catalogo_especificaciones_operaciones$costo_total) + sum(catalogo_especificaciones_operaciones$costo_pallets_total)
 cat("El costo total de la situación actual es de:", costo_total_actual, "USD")
 
 # Representación del costo total por planta

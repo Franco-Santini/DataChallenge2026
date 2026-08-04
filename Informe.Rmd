@@ -288,9 +288,28 @@ El archivo de compras consolida los volúmenes por tipo de caja y planta, y defi
 
 ## Preprocesamiento
 
+Como etapa previa al desarrollo del modelo de optimización, se realizó un preprocesamiento con el objetivo de mejorar la calidad y consistencia de la información proveniente de las distintas fuentes de datos. Durante esta fase se identificaron y corrigieron valores faltantes, se estandarizaron formatos de variables y se generaron nuevas variables de interés para la posterior construcción del modelo de optimización encargado de minimizar el costo total.
+
 ### Imputación de datos faltantes
 
+El primer paso consistió en identificar la existencia de valores faltantes en cada uno de los conjuntos de datos. Se observó que únicamente los archivos correspondientes a `catalogo_productos` y a `especificaciones_caja` presentaban observaciones faltantes, mientras que las bases de `operaciones_planta` y `procurement_cajas` no contenían valores ausentes, aunque esta última sí presentaba algunos costos unitarios por planta almacenados con un formato incorrecto.
+
+En `catalogo_productos` se detectó la ausencia de información correspondiente a la **cantidad de paquetes** y al **peso neto del paquete**. Debido a que ambos datos estaban implícitos dentro del campo **tamaño del paquete**, se extrajo automáticamente la información mediante expresiones regulares, permitiendo recuperar los valores originales.
+
+En `especificaciones_caja` se identificaron registros sin información sobre la **cantidad total de cajas por pallet**. Dado que dicha variable depende directamente de la **cantidad de cajas** dispuestas en el **largo, ancho y alto del pallet**, se calculó como el producto de estas tres dimensiones. Asimismo, se normalizó el formato de la variable correspondiente al **grosor del cartón** para que todos los registros utilizaran una representación numérica y no una mezcla de texto y números.
+
+En `procurement_cajas` se detectaron **costos unitarios** faltantes asociados a determinadas plantas. Estos valores fueron reconstruidos utilizando el **costo unitario base** y el **porcentaje de descuento** correspondiente a cada planta, aplicando la relación comercial utilizada por la empresa. Además, los **porcentajes de descuento** fueron convertidos a formato numérico para facilitar los cálculos.
+
 ### Creación de variables
+
+En primer lugar, se calcularon los volúmenes interior y exterior de cada caja, así como el volumen total del pallet. Estas variables resultan fundamentales para la generación de cajas candidatas, dado que una de las restricciones del modelo consiste en permitir variaciones de hasta $\pm 10 {\%}$ en las dimensiones internas de las cajas, preservando su volumen interno. Esto posibilita explorar distintas alternativas de diseño del envase secundario.
+
+Luego, se calculó el perímetro de la caja, variable necesaria para estimar la carga máxima (KG) que puede soportar una caja de cartón mediante la utilización de valores de resistencia ECT (*Edge Crush Test*). Para ello se construyó una tabla de equivalencias entre el grosor del cartón y su resistencia, permitiendo obtener una estimación de la capacidad máxima de carga de cada caja.
+
+También se incorporó una variable denominada headspace máximo, que representa el porcentaje máximo de espacio libre recomendado dentro de una caja según su grosor. Esta variable constituye una restricción orientada a evitar un exceso de espacio vacío, el cual puede provocar que el producto se desplace durante el transporte y aumentar el riesgo de potenciales pérdidas.
+
+Por último, se construyeron distintos conjuntos de datos mediante la unión de las bases de catálogo, especificaciones de cajas, procurement y operaciones. Entre ellos, `catalogo_especificaciones_operaciones` constituye una de las principales fuentes de información utilizada en las etapas posteriores del modelo de optimización.
+
 
 # Desarrollo
 
@@ -304,6 +323,7 @@ library(dplyr)
 library(ggplot2)
 library(plotly)
 library(scales)
+library(htmltools)
 
 procurement <- read.csv("Datos modificados/procurement_modificado.csv")
 catalogo_especificaciones <- read.csv("Datos modificados/catalogo_especificaciones.csv")
@@ -312,6 +332,7 @@ catalogo_especificaciones_operaciones <- read.csv("Datos modificados/catalogo_es
 catalogo_especificaciones_procurement <- read.csv("Datos modificados/catalogo_especificaciones_procurement.csv")
 especificaciones_procurement <- read.csv("Datos modificados/especificaciones_procurement.csv")
 
+options(scipen = 999)
 ```
 
 
@@ -372,6 +393,24 @@ htmltools::div(
 
 ```
 
+### Utilización de pallets
+
+```{r}
+
+g2 = ggplot(catalogo_especificaciones_operaciones) +
+  aes(x = 100*utilizacion) +
+  geom_density(color = "black", fill = "#009587") +
+  labs(x = "% Utilización", y = "Densidad", title = "Distribución utilización de pallets") +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.grid = element_blank())
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g2, tooltip = "text")
+)
+```
+
 ```{r}
 
 # Porcentajes de utilización del pallet
@@ -405,7 +444,7 @@ cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.5, t
     )
     
     annotations_list[[length(annotations_list) + 1]] <- list(
-      x = offset + 0.5, y = 0.5, text = paste0(round(porcentaje), "%"),
+      x = offset + 0.5, y = 0.5, text = paste0(round(porcentaje, 1), "%"),
       showarrow = FALSE, font = list(size = 20, color = "black")
     )
     
@@ -444,6 +483,44 @@ htmltools::div(
 
 
 ```
+
+```{r}
+
+pallets_por_planta <- colSums(catalogo_especificaciones_operaciones |> select(cantidad_pallets_planta_bakersfield,
+                                                                             cantidad_pallets_planta_buenos_aires,
+                                                                             cantidad_pallets_planta_curitiba,
+                                                                             cantidad_pallets_planta_monterrey,
+                                                                             cantidad_pallets_planta_santiago)) 
+                                                                     
+pallets_por_planta_df = data.frame(planta = names(pallets_por_planta), pallets = pallets_por_planta, row.names = NULL)
+pallets_por_planta_df$planta = recode(pallets_por_planta_df$planta, "cantidad_pallets_planta_bakersfield" = "Bakersfield",
+                                                                "cantidad_pallets_planta_buenos_aires" = "Buenos Aires",
+                                                                "cantidad_pallets_planta_curitiba" = "Curitiba", 
+                                                                "cantidad_pallets_planta_monterrey" = "Monterrey", 
+                                                                "cantidad_pallets_planta_santiago" = "Santiago")
+
+g3 = ggplot(pallets_por_planta_df) +
+      aes(x = reorder(planta, -pallets), y = pallets, text = paste0("Planta: ", planta, "<br>Pallets: ", comma(pallets))) +
+      geom_col(color = "black", fill = "#009587", width = 0.7) +
+      labs(x = "Planta", y = "Cantidad de pallets", title = "Cantidad de pallets por planta") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5),
+            panel.grid = element_blank())
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g3, tooltip = "text")
+)
+
+total_pallets = sum(pallets_por_planta_df$pallets)
+cat("El total de pallets en la situación actual es de:", total_pallets)
+
+```
+
+Los porcentaje de utilización de los pallets de los productos oscilan del 64.1% al 99.1%, con una media del 83.6%. 
+
+La cantidad de pallets utilizados por la empresa en la actualidad es de 1.193.792. Una mejor utilización de los pallets permitirá reducir el número de estos que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
+
 
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
 
