@@ -317,6 +317,10 @@ Por último, se construyeron distintos conjuntos de datos mediante la unión de 
 
 Como paso previo a proponer diferentes formas de optimización, interesa saber cómo es la situación actual de la empresa en cuanto a los costos, los volumenes de ventas, las dimensiones de las cajas, la utilización de los pallets, entre otras cosas. Esto permitirá tener un panorama amplio del estado de la empresa, y ayudará a la hora de la toma de decisiones y para luego realizar comparaciones.
 
+### Cajas
+
+Actualmente la empresa cuenta con un portafolio de **204** cajas, las cuales contienen a los 427 productos del catálogo. Un 57.35% de los productos tienen una caja individual, mientras que el resto de las mismas comparten caja con al menos un producto más, siendo la caja más flexible compartida por 10 productos distintos.
+
 ```{r}
 
 library(dplyr)
@@ -325,6 +329,8 @@ library(plotly)
 library(scales)
 library(htmltools)
 library(tibble)
+library(tidyr)
+library(ggridges)
 library(tidyr)
 
 procurement <- read.csv("Datos modificados/procurement_modificado.csv")
@@ -336,7 +342,6 @@ especificaciones_procurement <- read.csv("Datos modificados/especificaciones_pro
 
 options(scipen = 999)
 ```
-
 
 
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
@@ -351,7 +356,8 @@ g1 = catalogo_especificaciones_operaciones |>
   ggplot() +
   aes(x = n_prod,
       text = paste0("Productos por caja: ", after_stat(x),
-                    "<br>Cantidad de cajas: ", after_stat(count))) +
+                    "<br>Cantidad de cajas: ", after_stat(count),
+                    "<br>Porcentaje de cajas: ", round(100 * after_stat(prop), 4), "%")) +
   geom_bar(color = "black", fill = "#009587") +
   scale_x_continuous(breaks = 1:10, limits = c(0.5, 10.5)) +
   labs(x = "Productos por caja", y = "Cantidad de cajas", title = "Distribución de la cantidad de productos por caja") +
@@ -369,25 +375,38 @@ cajas_compartidas <- catalogo_especificaciones %>%
   summarise(cantidad_productos = n_distinct(codigo_producto)) %>%
   filter(cantidad_productos > 1)
 
-cat("Hay", nrow(cajas_compartidas), "cajas compartidas")
+#cat("Hay", nrow(cajas_compartidas), "cajas compartidas")
 
 ```
+
+Bajo el panorama actual, la asignación de los productos a las cajas está lejos de ser óptima. Muchos productos con dimensiones similares presentan cajas independientes y generan costos innecesarios para la empresa.
 
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
 
 htmltools::div(
   style = "display: flex; justify-content: center;",
-  plot_ly(data = especificaciones_procurement, x = ~caja_interior_ancho, y = ~caja_interior_largo, z = ~caja_interior_alto,
+  plot_ly(data = especificaciones_procurement,
+          x = ~caja_interior_ancho,
+          y = ~caja_interior_largo,
+          z = ~caja_interior_alto,
           type = 'scatter3d', mode = 'markers',
+          mode = "markers",
+          text = ~paste0(
+            "<b>Tipo de caja:</b> ", caja_tipo_id,
+            "<br><b>Ancho (mm):</b> ", caja_interior_ancho,
+            "<br><b>Largo (mm):</b> ", caja_interior_largo,
+            "<br><b>Alto (mm):</b> ", caja_interior_alto
+          ),
+          hoverinfo = "text",
           marker = list(color = '#009587', size = 4)) %>%
     layout(
       title = "Dimensiones interiores de las cajas",
       scene = list(
-        xaxis = list(title = "Ancho", showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+        xaxis = list(title = "Ancho (mm)", showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
                      backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
-        yaxis = list(title = "Largo", showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+        yaxis = list(title = "Largo (mm)", showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
                      backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE),
-        zaxis = list(title = "Alto", showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
+        zaxis = list(title = "Alto (mm)", showspikes = TRUE, spikecolor = "rgb(160, 120, 85)", spikethickness = 3, spikesides = TRUE,
                      backgroundcolor = "rgb(222, 184, 135)", showbackground = TRUE)
       )
     )
@@ -395,13 +414,20 @@ htmltools::div(
 
 ```
 
-### Utilización de pallets
+Se observa que las dimensiones de las cajas no se distribuyen de manera homogénea. En particular, el largo interior presenta una variabilidad acotada [375mm, 395mm], mientras que las principales diferencias entre los tipos de caja se concentran en el ancho [182mm, 297mm] y, especialmente, en el alto [138mm, 363mm].  
+
+Como medida de cercanía se consideró la máxima diferencia relativa entre dos cajas en sus tres dimensiones interiores. Donde se encontró que, 183 (89,7%) de los 204 tipos de caja presentan al menos una caja vecina, es decir, con una diferencia menor o igual 5 mm en algún eje. Solo una caja se presenta extremadamente aislada del resto, con dimensiones de **375 × 182 × 152 mm**.
+
+Esto deja en evidencia que es posible agrupar distintos productos en cajas identicas, consolidando de esta manera un catálogo más eficiente.
+
+### Pallets
+
+En el año de estudio, la empresa necesito despachar **1.193.792** pallets, valor muy influenciado por un uso poco eficiente de los mismos. El porcentaje de utilización de los pallets por planta se presenta a continuación:
 
 ```{r}
-
 g2 = ggplot(catalogo_especificaciones_operaciones) +
   aes(x = 100*utilizacion) +
-  geom_density(color = "black", fill = "#009587") +
+  geom_histogram(color = "black", fill = "#009587", bins = 10) +
   labs(x = "% Utilización", y = "Densidad", title = "Distribución utilización de pallets") +
   theme_minimal() + 
   theme(plot.title = element_text(hjust = 0.5),
@@ -485,6 +511,109 @@ htmltools::div(
 
 
 ```
+
+grafico de utilización por pallets
+
+```{r}
+plantas_orden <- c(
+  "Bakersfield", "Buenos Aires", "Curitiba",
+  "Monterrey", "Santiago"
+)
+
+utilizacion_planta <- catalogo_especificaciones_operaciones |>
+  select(
+    codigo_producto,
+    utilizacion,
+    starts_with("cantidad_pallets_planta_")
+  ) |>
+  pivot_longer(
+    cols = starts_with("cantidad_pallets_planta_"),
+    names_to = "planta",
+    names_prefix = "cantidad_pallets_planta_",
+    values_to = "pallets"
+  ) |>
+  filter(pallets > 0) |>
+  mutate(
+    planta = recode(
+      planta,
+      "buenos_aires" = "Buenos Aires",
+      "curitiba" = "Curitiba",
+      "santiago" = "Santiago",
+      "monterrey" = "Monterrey",
+      "bakersfield" = "Bakersfield"
+    ),
+    # Primer nivel queda abajo; por eso se invierte para el orden visual.
+    planta = factor(planta, levels = rev(plantas_orden))
+  )
+
+medias_planta <- utilizacion_planta |>
+  group_by(planta) |>
+  summarise(
+    media_utilizacion = weighted.mean(utilizacion, w = pallets),
+    pallets = sum(pallets),
+    .groups = "drop"
+  )
+
+etiquetas_planta <- setNames(
+  paste0(
+    as.character(medias_planta$planta),
+    "\n(", comma(medias_planta$pallets), " pallets)"
+  ),
+  as.character(medias_planta$planta)
+)
+
+g_utilizacion <- ggplot(
+  utilizacion_planta,
+  aes(
+    x = utilizacion,
+    y = planta,
+    weight = pallets
+  )
+) +
+  geom_density_ridges(
+    fill = "#009587",
+    color = "#006B61",
+    alpha = 0.7,
+    linewidth = 0.35,
+    scale = 0.95,
+    rel_min_height = 0.01,
+  ) +
+  geom_point(
+    data = medias_planta,
+    aes(x = media_utilizacion, y = planta),
+    inherit.aes = FALSE,
+    shape = 21,
+    size = 3.2,
+    stroke = 0.9,
+    fill = "#E4F3EF",
+    color = "#00584F"
+  ) +
+  scale_x_continuous(
+    labels = label_percent(accuracy = 1),
+    breaks = seq(0.6, 1, by = 0.1),
+    limits = c(0.6, 1)
+  ) +
+  scale_y_discrete(labels = etiquetas_planta) +
+  labs(
+    title = "Distribución de la utilización de pallets por planta",
+    subtitle = "Cada distribución se pondera según la cantidad de pallets asociados a cada producto.",
+    x = "Utilización volumétrica del pallet",
+    y = NULL,
+    caption = "El punto indica la utilización promedio ponderada de cada planta."
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(color = "black"),
+    plot.caption = element_text(hjust = 0)
+  )
+
+g_utilizacion
+```
+Se presentan cajas con utilizaciones de pallet entre un 64% al 99%. Identificandose grandes posibilidades de mejora en esta área.
 
 ```{r}
 
