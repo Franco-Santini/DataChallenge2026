@@ -324,6 +324,8 @@ library(ggplot2)
 library(plotly)
 library(scales)
 library(htmltools)
+library(tibble)
+library(tidyr)
 
 procurement <- read.csv("Datos modificados/procurement_modificado.csv")
 catalogo_especificaciones <- read.csv("Datos modificados/catalogo_especificaciones.csv")
@@ -517,7 +519,7 @@ cat("El total de pallets en la situación actual es de:", total_pallets)
 
 ```
 
-Los porcentaje de utilización de los pallets de los productos oscilan del 64.1% al 99.1%, con una media del 83.6%. 
+Los porcentaje de utilización de los pallets de los productos oscilan del 64,1% al 99,1%, con una media del 83,6%. 
 
 La cantidad de pallets utilizados por la empresa en la actualidad es de 1.193.792. Una mejor utilización de los pallets permitirá reducir el número de estos que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
 
@@ -623,6 +625,10 @@ htmltools::div(
 
 ```
 
+### Costos
+
+Dado que el objetivo principal del presente análisis es reducir los costos de la empresa, a continuación se presenta un panorama general de la estructura actual de costos, con el propósito de identificar sus principales componentes y determinar el origen de dichos costos.
+
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
 
 # Costo total por planta
@@ -638,34 +644,93 @@ costo_por_planta2 <- colSums(catalogo_especificaciones_operaciones |> select(cos
                                                                              costo_pallets_planta_monterrey,
                                                                              costo_pallets_planta_santiago)) 
 
-costo_por_planta = costo_por_planta1 + costo_por_planta2
-                                                                     
-costo_por_planta_df = data.frame(planta = names(costo_por_planta), costos = costo_por_planta, row.names = NULL)
-costo_por_planta_df$planta = recode(costo_por_planta_df$planta, "costo_total_planta_bakersfield" = "Bakersfield", 
-                                                                "costo_total_planta_buenos_aires" = "Buenos Aires", 
-                                                                "costo_total_planta_curitiba" = "Curitiba", 
-                                                                "costo_total_planta_monterrey" = "Monterrey", 
-                                                                "costo_total_planta_santiago" = "Santiago")
 
-g7 = ggplot(costo_por_planta_df) +
-      aes(x = reorder(planta, -costos), y = costos, text = paste0("Planta: ", planta, "<br>Costo: ", comma(costos))) +
-      geom_col(color = "black", fill = "#009587", width = 0.7) +
-      scale_y_continuous(labels = label_number(scale = 1e-6, suffix = " mill.")) +
-      labs(x = "Planta", y = "Costos", title = "Costos totales por planta") +
-      theme_minimal() + 
-      theme(plot.title = element_text(hjust = 0.5),
-            panel.grid = element_blank())
+costos_plantas <- tibble(
+  ciudad = c(
+    "Bakersfield",
+    "Buenos Aires",
+    "Curitiba",
+    "Monterrey",
+    "Santiago"
+  ),
+  costo_total = as.numeric(costo_por_planta1),
+  costo_pallets = as.numeric(costo_por_planta2)
+)
+
+costos_plot <- costos_plantas %>%
+  arrange(desc(costo_total)) %>%
+  mutate(
+    ciudad = factor(ciudad, levels = ciudad)
+  ) %>%
+  pivot_longer(
+    cols = c(costo_total, costo_pallets),
+    names_to = "tipo_costo",
+    values_to = "costo"
+  ) %>%
+  mutate(
+    tipo_costo = recode(tipo_costo,
+                        costo_total = "Costo packaging",
+                        costo_pallets = "Costo traslados")
+  )
+
+g7 <- ggplot(costos_plot,
+             aes(x = ciudad,
+                 y = costo,
+                 fill = tipo_costo,
+                 text = paste0(
+                   "Planta: ", ciudad,
+                   "<br>Tipo: ", tipo_costo,
+                   "<br>Costo: ", scales::label_number(
+                     big.mark = ".",
+                     decimal.mark = ","
+                   )(costo)
+                 ))) +
+  geom_col() +
+  labs(
+    title = "Costos por planta",
+    x = "Planta",
+    y = "Costo total",
+    fill = NULL
+  ) +
+  scale_fill_manual(
+  values = c(
+    "Costo packaging" = "#ff7f0e",
+    "Costo traslados" = "#009587"
+   )
+  ) +
+  scale_y_continuous(
+    labels = scales::label_number(big.mark = ".", decimal.mark = ",")
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16),
+    panel.grid = element_blank()
+  )
 
 htmltools::div(
   style = "display: flex; justify-content: center;",
   ggplotly(g7, tooltip = "text")
 )
 
-# Costo total de todos los productos vendidos en la situación actual
-costo_total_actual <- sum(catalogo_especificaciones_operaciones$costo_total) + sum(catalogo_especificaciones_operaciones$costo_pallets_total)
-cat("El costo total de la situación actual es de:", costo_total_actual, "USD")
 
+#costo_total_actual <- sum(costos_plantas$costo_total) + sum(costos_plantas$costo_pallets)
+#costo_packaging_actual = sum(costos_plantas$costo_total)
+#costo_pallets_actual = sum(costos_plantas$costo_pallets)
+#cat("El costo total de la situación actual es de:", costo_total_actual, "USD")
+#cat("El costo de packaging total de la situación actual es de:", costo_packaging_actual, "USD")
+#cat("El costo de pallets total de la situación actual es de:", costo_pallets_actual, "USD")
+
+costos_plantas <- costos_plantas %>%
+  mutate(
+    porcentaje_costo = costo_total / sum(costo_total),
+    porcentaje_costo = scales::percent(porcentaje_costo,
+                                       accuracy = 0.1,
+                                       decimal.mark = ",")
+  )
 ```
+
+El costo total de Bonsai Corp en la actualidad es de 209.235.094 USD, los cuales 30.166.294 USD provienen de costos de packaging y 179.068.800 USD de costos de traslados. La planta de Curitiba es la que más costos genera, siendo este el  35,8% del costo total (74.878.226 USD).
+
 
 
 ## Técnicas aplicadas
