@@ -756,7 +756,11 @@ htmltools::div(
 
 ### Costos
 
-Dado que el objetivo principal del presente análisis es reducir los costos de la empresa, a continuación se presenta un panorama general de la estructura actual de costos, con el propósito de identificar sus principales componentes y determinar el origen de dichos costos.
+Dado que el objetivo principal del presente análisis es reducir los costos de la empresa, a continuación se presenta un panorama general de la estructura actual de gastos, con el propósito de identificar sus principales componentes y comprender el origen de cada uno de ellos.
+
+El costo total de Bonsai Corp en la actualidad es de 209.235.094 USD, los cuales 30.166.294 USD provienen de costos de packaging y 179.068.800 USD de costos de traslados.
+
+A continuación, se presenta un gráfico destinado a evaluar la eficiencia relativa de cada planta, mediante la comparación entre sus costos y la relación costo/volumen. Este análisis resulta necesario, ya que una planta con mayores costos absolutos no es necesariamente la menos eficiente, sino que dichos costos deben interpretarse en función del volumen que procesa.
 
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
 
@@ -774,6 +778,12 @@ costo_por_planta2 <- colSums(catalogo_especificaciones_operaciones |> select(cos
                                                                              costo_pallets_planta_santiago)) 
 
 
+volumen_por_planta = colSums(catalogo_especificaciones_operaciones |> select(volumen_producto_planta_bakersfield,
+                                                                             volumen_producto_planta_buenos_aires,
+                                                                             volumen_producto_planta_curitiba,
+                                                                             volumen_producto_planta_monterrey,
+                                                                             volumen_producto_planta_santiago)) 
+
 costos_plantas <- tibble(
   ciudad = c(
     "Bakersfield",
@@ -783,11 +793,15 @@ costos_plantas <- tibble(
     "Santiago"
   ),
   costo_total = as.numeric(costo_por_planta1),
-  costo_pallets = as.numeric(costo_por_planta2)
-)
+  costo_pallets = as.numeric(costo_por_planta2),
+  volumen = as.numeric(volumen_por_planta)
+) %>%
+  mutate(
+    costo_volumen = (costo_total + costo_pallets) / volumen
+  )
 
 costos_plot <- costos_plantas %>%
-  arrange(desc(costo_total)) %>%
+  arrange(desc(costo_total + costo_pallets)) %>%
   mutate(
     ciudad = factor(ciudad, levels = ciudad)
   ) %>%
@@ -798,23 +812,61 @@ costos_plot <- costos_plantas %>%
   ) %>%
   mutate(
     tipo_costo = recode(tipo_costo,
-                        costo_total = "Costo packaging",
-                        costo_pallets = "Costo traslados")
+      costo_total = "Costo packaging",
+      costo_pallets = "Costo traslados"
+    )
   )
 
-g7 <- ggplot(costos_plot,
-             aes(x = ciudad,
-                 y = costo,
-                 fill = tipo_costo,
-                 text = paste0(
-                   "Planta: ", ciudad,
-                   "<br>Tipo: ", tipo_costo,
-                   "<br>Costo: ", scales::label_number(
-                     big.mark = ".",
-                     decimal.mark = ","
-                   )(costo)
-                 ))) +
+# mismo orden para los puntos
+costos_plantas <- costos_plantas %>%
+  arrange(desc(costo_total + costo_pallets)) %>%
+  mutate(
+    ciudad = factor(ciudad, levels = levels(costos_plot$ciudad))
+  )
+
+factor_escala <- max(costos_plot$costo) / max(costos_plantas$costo_volumen)
+
+g7 <- ggplot(
+  costos_plot,
+  aes(
+    x = ciudad,
+    y = costo,
+    fill = tipo_costo,
+    text = paste0(
+      "Planta: ", ciudad,
+      "<br>Tipo: ", tipo_costo,
+      "<br>Costo: ",
+      scales::label_number(big.mark = ".", decimal.mark = ",")(costo)
+    )
+  )
+) +
   geom_col() +
+geom_line(
+  data = costos_plantas,
+  aes(
+    x = ciudad,
+    y = costo_volumen * factor_escala,
+    group = 1,
+    color = "Costo / volumen"
+  ),
+  inherit.aes = FALSE,
+  linewidth = 0.5
+) +
+geom_point(
+  data = costos_plantas,
+  aes(
+    x = ciudad,
+    y = costo_volumen * factor_escala,
+    color = "Costo / volumen",
+    text = paste0(
+      "Planta: ", ciudad,
+      "<br>Costo/volumen: ",
+      scales::label_number(decimal.mark = ",")(costo_volumen)
+    )
+  ),
+  inherit.aes = FALSE,
+  size = 2
+) +
   labs(
     title = "Costos por planta",
     x = "Planta",
@@ -822,13 +874,22 @@ g7 <- ggplot(costos_plot,
     fill = NULL
   ) +
   scale_fill_manual(
-  values = c(
-    "Costo packaging" = "#ff7f0e",
-    "Costo traslados" = "#009587"
-   )
-  ) +
+    values = c(
+      "Costo packaging" = "#DEB887",
+      "Costo traslados" = "#009587"
+    )
+  ) + 
+  scale_color_manual(
+  values = c("Costo / volumen" = "black"),
+  name = NULL
+) +
   scale_y_continuous(
-    labels = scales::label_number(big.mark = ".", decimal.mark = ",")
+    labels = scales::label_number(big.mark = ".", decimal.mark = ","),
+    sec.axis = sec_axis(
+      ~ . / factor_escala,
+      name = "Costo / volumen",
+      labels = scales::label_number(decimal.mark = ",")
+    )
   ) +
   theme_minimal() +
   theme(
@@ -836,11 +897,16 @@ g7 <- ggplot(costos_plot,
     panel.grid = element_blank()
   )
 
+p <- ggplotly(g7, tooltip = "text")
+
+p$x$data[[1]]$name <- "Costo packaging"
+p$x$data[[2]]$name <- "Costo traslados"
+p$x$data[[3]]$name <- "Costo / volumen"
+
 htmltools::div(
   style = "display: flex; justify-content: center;",
-  ggplotly(g7, tooltip = "text")
+  p
 )
-
 
 #costo_total_actual <- sum(costos_plantas$costo_total) + sum(costos_plantas$costo_pallets)
 #costo_packaging_actual = sum(costos_plantas$costo_total)
@@ -858,8 +924,7 @@ costos_plantas <- costos_plantas %>%
   )
 ```
 
-El costo total de Bonsai Corp en la actualidad es de 209.235.094 USD, los cuales 30.166.294 USD provienen de costos de packaging y 179.068.800 USD de costos de traslados. La planta de Curitiba es la que más costos genera, siendo este el  35,8% del costo total (74.878.226 USD).
-
+Se puede observar que la planta de Curitiba es la que mayores costos tiene, siendo estos el 35,8% del costo total. Sin embargo, al ver la relación costo/volumen, todas las plantas tienen un valor parecido, siendo la de Santiago la más eficiente y la de Monterrey la menos. La reducción de los valores de esta relación, será uno de los puntos más importantes en la posterior optimización.
 
 
 ## Técnicas aplicadas
