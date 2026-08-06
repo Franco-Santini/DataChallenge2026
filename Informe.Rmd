@@ -15,12 +15,12 @@ knitr::opts_chunk$set(
 
 # Introducción {#introduccion} 
 
-Bonsai Corp es una empresa de brócoli congelado, en donde los productos se comercializan en un envase primario que contiene al alimento, y estos son colocados en cajas de cartón (envase secundario) para almacenarlos y transportarlos desde 5 plantas hacia 5 regiones distribuidas por el mundo. Esta cajas son apiladas en pallets de 1200 × 800 mm y altura máxima de carga de 1800 mm. Los envíos dentro de la misma región tienen un costo de USD 150 por pallet; los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet.
+Bonsai Corp es una empresa de brócoli congelado, en donde los productos se comercializan en un envase primario que contiene al alimento, y estos son colocados en cajas de cartón (envase secundario) para almacenarlos y transportarlos desde 5 plantas hacia 5 regiones distribuidas por el mundo. Esta cajas son apiladas en pallets de 1.200 × 800 mm y altura máxima de carga de 1.800 mm.
 
 El catalogo está compuesto de 427 productos, cada uno de los cuales tiene asignado un tipo de caja de acuerdo con sus características. Si bien algunos productos comparten el mismo envase secundario, actualmente se utilizan 204 tipos de caja diferentes. La incorporación progresiva de nuevos productos y diseños dio lugar a un portafolio de packaging altamente fragmentado, en el que cada tipo de caja requiere su propio molde, corridas de producción y espacio de almacenamiento, generando *altos costos de packaging, logística e inventario*. Ante cada lanzamiento de un nuevo producto, estos costos siguen en aumento, y la necesidad de hacer algo para bajarlos es imperiosa.
 
 <p align="center">
-<img src="img/brocoli.jpg" width="400"/>
+<img src="img/brocoli.jpg" width="600"/>
 </p>
 
 # Objetivos
@@ -319,7 +319,7 @@ Como paso previo a proponer diferentes formas de optimización, interesa saber c
 
 ### Cajas
 
-Actualmente la empresa cuenta con un portafolio de **204** cajas, las cuales contienen a los 427 productos del catálogo. Un 57.35% de los productos tienen una caja individual, mientras que el resto de las mismas comparten caja con al menos un producto más, siendo la caja más flexible compartida por 10 productos distintos.
+Actualmente la empresa cuenta con un portafolio de **204** cajas, las cuales contienen a los 427 productos del catálogo. Un **57,35%** de los productos tienen una caja individual, mientras que el resto de las mismas comparten caja con al menos un producto más, siendo la caja más flexible compartida por 10 productos distintos.
 
 ```{r}
 
@@ -366,7 +366,7 @@ g1 = catalogo_especificaciones_operaciones |>
         panel.grid = element_blank())
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   ggplotly(g1, tooltip = "text")
 )
 
@@ -384,7 +384,7 @@ Bajo el panorama actual, la asignación de los productos a las cajas está lejos
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   plot_ly(data = especificaciones_procurement,
           x = ~caja_interior_ancho,
           y = ~caja_interior_largo,
@@ -428,13 +428,13 @@ En el año de estudio, la empresa necesito despachar **1.193.792** pallets, valo
 g2 = ggplot(catalogo_especificaciones_operaciones) +
   aes(x = 100*utilizacion) +
   geom_histogram(color = "black", fill = "#009587", bins = 10) +
-  labs(x = "% Utilización", y = "Densidad", title = "Distribución utilización de pallets") +
+  labs(x = "% Utilización", y = "Cantidad de productos", title = "Distribución utilización de pallets") +
   theme_minimal() + 
   theme(plot.title = element_text(hjust = 0.5),
         panel.grid = element_blank())
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   ggplotly(g2, tooltip = "text")
 )
 ```
@@ -501,7 +501,7 @@ cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.5, t
 prom_uti_pallet = mean(catalogo_especificaciones_operaciones$utilizacion)
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   cuadrados_porcentaje(
     porcentajes = prom_uti_pallet * 100,
     etiquetas = "Total",
@@ -639,7 +639,7 @@ g3 = ggplot(pallets_por_planta_df) +
             panel.grid = element_blank())
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   ggplotly(g3, tooltip = "text")
 )
 
@@ -648,9 +648,9 @@ cat("El total de pallets en la situación actual es de:", total_pallets)
 
 ```
 
-Los porcentaje de utilización de los pallets de los productos oscilan del 64,1% al 99,1%, con una media del 83,6%. 
+Los porcentaje de utilización de los pallets de los productos oscilan del **64,1%** al **99,1%**, con una media del **83,6%**. 
 
-La cantidad de pallets utilizados por la empresa en la actualidad es de 1.193.792. Una mejor utilización de los pallets permitirá reducir el número de estos que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
+La cantidad de pallets utilizados por la empresa en la actualidad es de **1.193.792**. Una mejor utilización de los pallets permitirá reducir el número de estos que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
 
 
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
@@ -758,7 +758,7 @@ htmltools::div(
 
 Dado que el objetivo principal del presente análisis es reducir los costos de la empresa, a continuación se presenta un panorama general de la estructura actual de gastos, con el propósito de identificar sus principales componentes y comprender el origen de cada uno de ellos.
 
-El costo total de Bonsai Corp en la actualidad es de 209.235.094 USD, los cuales 30.166.294 USD provienen de costos de packaging y 179.068.800 USD de costos de traslados.
+El costo total de Bonsai Corp en la actualidad es de **209.235.094 USD**, los cuales **30.166.294 USD** provienen de costos de packaging y **179.068.800** USD de costos de traslados.
 
 A continuación, se presenta un gráfico destinado a evaluar la eficiencia relativa de cada planta, mediante la comparación entre sus costos y la relación costo/volumen. Este análisis resulta necesario, ya que una planta con mayores costos absolutos no es necesariamente la menos eficiente, sino que dichos costos deben interpretarse en función del volumen que procesa.
 
@@ -840,7 +840,7 @@ g7 <- ggplot(
     )
   )
 ) +
-  geom_col() +
+  geom_col(color = "black", linewidth = 0.5) +
 geom_line(
   data = costos_plantas,
   aes(
@@ -893,7 +893,7 @@ geom_point(
   ) +
   theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5, size = 16),
+    plot.title = element_text(hjust = 0.5, size = 12),
     panel.grid = element_blank()
   )
 
@@ -904,7 +904,7 @@ p$x$data[[2]]$name <- "Costo traslados"
 p$x$data[[3]]$name <- "Costo / volumen"
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   p
 )
 
@@ -924,14 +924,225 @@ costos_plantas <- costos_plantas %>%
   )
 ```
 
-Se puede observar que la planta de Curitiba es la que mayores costos tiene, siendo estos el 35,8% del costo total. Sin embargo, al ver la relación costo/volumen, todas las plantas tienen un valor parecido, siendo la de Santiago la más eficiente y la de Monterrey la menos. La reducción de los valores de esta relación, será uno de los puntos más importantes en la posterior optimización.
-
+Se puede observar que la planta de Curitiba es la que mayores costos tiene, siendo estos el **35,8%** del costo total. Sin embargo, al ver la relación costo/volumen, todas las plantas tienen un valor parecido, siendo la de Monterrey la más eficiente y la de Santiago la menos. La reducción de los valores de esta relación, será uno de los puntos más importantes en la posterior optimización.
 
 ## Técnicas aplicadas
 
 ## Resultados
 
+La optimización propuesta permitió alcanzar el objetivo principal del presente análisis, orientado a la reducción de los costos operativos de la empresa. Como resultado de las mejoras implementadas, el costo total se redujo un **10,11%**, pasando de **USD 209.235.094** a **USD 188.079.375,44**. Esto representa un ahorro absoluto de **USD 21.155.718,56**, lo que evidencia un impacto significativo de las medidas adoptadas sobre la estructura de costos. El ahorro se reparte de la siguiente manera entre los dos componentes: **10%** en flete y **10.76%** en packaging. A continuación, se presentan los principales resultados obtenidos y el aporte de cada componente de la optimización a la reducción alcanzada.
+
+Una de las claves fue la reducción del portafolio de cajas un **72%**, por lo que ahora se tienen **57** variedades distintas para los 427 productos, por lo que el volumen anual aumenta y accede a bandas de descuento que hoy están fuera de alcance. 
+
+```{r, fig.width=6, fig.height=5, fig.align='center'}
+
+# Cantidades
+verdes <- 57
+grises <- 147
+total <- verdes + grises
+
+# Elegimos una grilla de 12 x 17 = 204 celdas
+ncol <- 12
+nrow <- 17
+
+waffle <- tibble(
+  id = 1:total,
+  estado = c(rep("Optimizado", verdes),
+             rep("Resto", grises))
+) %>%
+  mutate(
+    x = ((id - 1) %% ncol) + 1,
+    y = nrow - ((id - 1) %/% ncol)
+  )
+
+g8 = ggplot(waffle, aes(x, y, fill = estado)) +
+  geom_tile(
+    color = "black",
+    linewidth = 0.3,
+    width = 0.95,
+    height = 0.85
+  ) +
+  scale_fill_manual(values = c(
+    "Optimizado" = "#009587",
+    "Resto" = "#bdbdbd"
+  )) +
+  theme_void() +
+  theme(
+    legend.position = "none",
+    plot.margin = margin(10, 10, 10, 10)
+  )
+
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g8, tooltip = "text")
+)
+```
+
+Un **15,78%** de los productos tienen una caja individual, bajando considerablemente el 57,35% de la situación anterior, que generaba una cantidad innecesaria de envases secundiarios distintos. Por lo tanto, el **84,22%** restante de las cajas comparten al menos 2 productos, siendo la caja más flexible compartida por 31 productos distintos.
+
+```{r, fig.width=8, fig.height=5, fig.align='center'}
+
+optimo = read.csv("outputs/entrega_kaggle_optimo_10.csv")
+
+cajas <- optimo %>%
+  count(caja_exterior_largo, caja_exterior_ancho, caja_exterior_alto, name = "cantidad_productos") %>%
+  arrange(desc(cantidad_productos))
+
+g8 <- ggplot(cajas) + aes(x = cantidad_productos,
+      text = paste0("Productos por caja: ", after_stat(x),
+                    "<br>Cantidad de cajas: ", after_stat(count),
+                    "<br>Porcentaje de cajas: ", round(100 * after_stat(prop), 4), "%")) +
+  geom_bar(color = "black", fill = "#009587", linewidth = 0.3) +
+  scale_x_continuous(breaks = 1:31, limits = c(0.5, 31.5)) +
+  scale_y_continuous(
+  breaks = c(0, 5, 10),
+  labels = scales::label_number(accuracy = 1)
+) +
+  labs(x = "Productos por caja", y = "Cantidad de cajas", title = "Distribución de la cantidad de productos por caja") +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5, size = 12),
+        panel.grid = element_blank())
+
+htmltools::div(
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
+  ggplotly(g8, tooltip = "text")
+)
+```
+
+Al rediseñar las cajas dentro del margen permitido para que aprovechen mejor la superficie del pallet, la cantidad promedio de cajas por pallet sube de **59** a **65,7**. Eso significa **119.743** pallets menos por año saliendo de las cinco plantas, con el mismo volumen de producto, pasando de **1.193.792** a **1.074.049** pallets anuales, es decir una reducción del **10%**. 
+
+El mayor aprovechamiento de las dimensiones del pallet antes mencionado, puede verse mejor en los siguientes gráficos, en los cuales se destaca que la utilización promedio subió de un **83,6%** a un **94,9%**:
+
+```{r}
+# Dimensiones del pallet (mm)
+PALLET_LARGO  <- 1200
+PALLET_ANCHO  <- 800
+PALLET_ALTO   <- 1800
+
+# Cálculo de utilización
+cajas_utilizacion <- optimo %>%
+  mutate(
+    # Orientación fija:
+    # largo de la caja paralelo al lado corto del pallet (800 mm)
+    cajas_ancho  = floor(PALLET_ANCHO / caja_exterior_largo),
+    cajas_largo  = floor(PALLET_LARGO / caja_exterior_ancho),
+    niveles      = floor(PALLET_ALTO / caja_exterior_alto),
+
+    cajas_por_pallet = cajas_ancho * cajas_largo * niveles,
+
+    volumen_caja   = caja_exterior_largo *
+                     caja_exterior_ancho *
+                     caja_exterior_alto,
+
+    volumen_pallet = PALLET_LARGO *
+                     PALLET_ANCHO *
+                     PALLET_ALTO,
+
+    utilizacion_pallet_pct =
+      100 * cajas_por_pallet * volumen_caja / volumen_pallet
+  )
+
+x_range <- range(
+  c(100 * catalogo_especificaciones_operaciones$utilizacion,
+    cajas_utilizacion$utilizacion_pallet_pct),
+  na.rm = TRUE
+)
+
+g9 <- ggplot(catalogo_especificaciones_operaciones,
+             aes(x = 100 * utilizacion)) +
+  geom_histogram(color = "black", fill = "#009587", bins = 10) +
+  scale_x_continuous(limits = x_range) +
+  labs(
+    x = NULL,
+    y = "Cantidad de productos",
+    title = "Antes de la optimización"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 12),
+    panel.grid = element_blank()
+  )
+
+htmltools::div(
+  style = "display: flex; justify-content: center; margin-top: 30px;",
+  ggplotly(g9, tooltip = "text")
+)
+
+g10 <- ggplot(cajas_utilizacion,
+              aes(x = utilizacion_pallet_pct)) +
+  geom_histogram(color = "black", fill = "#009587", bins = 10) +
+  scale_x_continuous(limits = x_range) +
+  labs(
+    x = "% Utilización del pallet",
+    y = "Cantidad de productos",
+    title = "Después de la optimización"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 12),
+    panel.grid = element_blank())
+
+htmltools::div(
+  style = "display: flex; justify-content: center; margin-bottom: 30px;",
+  ggplotly(g10, tooltip = "text")
+)
+
+
+
+```
+
+
+
+
+
+```{r}
+
+prom_uti_pallet_despues = mean(cajas_utilizacion$utilizacion_pallet_pct)
+
+htmltools::div(
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
+  cuadrados_porcentaje(
+    porcentajes = c(prom_uti_pallet*100, prom_uti_pallet_despues),
+    etiquetas = c("Antes", "Después"),
+    titulo = "Utilización promedio del pallet"
+  )
+)
+```
+
+
+
+
 # Conclusiones y propuestas de mejoras
 
+- Asignación de nuevos productos
+
+Los USD 21.155.718,50 ahorrados no dependen de haber encontrado 57 cajas buenas: dependen de que el volumen siga concentrado en esas 57 cajas. El catálogo de productos es un activo que se actualiza con cada nuevo lanzamiento. Sin una regla clara, cada producto nuevo tiende a traer su propia caja y el ahorro disminuye lanzamiento a lanzamiento.
+
+Por lo tanto, cada nuevo lanzamiento tiene que responder una sola pregunta: **¿este producto entra en una caja que ya existe, o justifica crear una nueva?** La clave está en cómo se mide la respuesta. Como el precio por caja depende del volumen anual consolidado por caja en cada planta, asignar un producto nuevo a una caja existente no solo le pone precio a ese producto, sino que puede abaratar todo el volumen que esa caja ya tenía, al obtener un tier de descuento superior.
+
+El catálogo optimizado tiene un caso que ilustra el punto con números reales. Una de las 57 cajas agrupa nueve productos y acumula 97.776 unidades anuales en la planta de Monterrey: le faltan apenas 2.224 unidades para cruzar el umbral de las 100.000 y pasar de un 10% a un 20% de descuento. Supongamos que llega un producto nuevo de 385 × 290 × 235 mm y 12 kg, con un pronóstico de 3.000 unidades anuales en esa misma planta. Cuatro cajas del catálogo lo admiten, y las cuatro entran 56 unidades por pallet, de modo que el costo de flete es idéntico en todos los casos:
+
+Opción	Volumen que ya tiene en Monterrey	Flete	Efecto en packaging	Costo incremental total
+Caja A — 9 productos, cerca del umbral	97.776	8.100	−4.427	3.673
+Caja B — 20 productos, ya en la mejor banda	1.471.325	8.100	+1.260	9.360
+Caja C — 8 productos, sin volumen en la planta	0	8.100	+1.980	10.080 
+Diseño nuevo	0	8.100	+1.980	10.080
+
+Se puede apreciar que la caja A cuesta un 61% menos que la segunda mejor y un 64% menos que crear una caja nueva. Su efecto en packaging es incluso negativo: las 3.000 unidades nuevas cuestan USD 1.440, y al mismo tiempo abaratan en USD 5.867 las 97.776 unidades que ya estaban en esa caja, porque el conjunto pasa a comprarse con un 20% de descuento en lugar de un 10%.
+
+La caja B es la más grande del catálogo en esa planta, con aproximadamente 1,47 millones de unidades anuales, y ya compra al mejor precio disponible. Precisamente por eso no tiene nada más que ganar: el producto nuevo entra a USD 0,42 la unidad y no arrastra a nadie. La caja A, más chica, vale casi tres veces más porque está a punto de cruzar un umbral. La mejor caja no es la que más volumen tiene, sino la que está más cerca de su próximo salto de descuento.
+
+Por eso el criterio de decisión es el **costo incremental del sistema** —el costo total con el producto menos el costo sin él— y no el costo aislado del SKU. 
+
+Por lo tanto, el equipo de lanzamiento no tiene que decidir con una tabla estática de cajas disponibles, sino que, necesita consultar el estado de volumen del catálogo en el momento de la decisión, porque la mejor caja para un producto depende de cuánto volumen tiene cada caja hoy y de qué tan cerca está de su próximo umbral. Un lanzamiento que se evalúe seis meses más tarde, con otros volúmenes, puede tener otra respuesta correcta.
+
+Para decidir si un nuevo producto se debe de crear una caja nueva, se tiene que pasar por el siguiente proceso, el cual establece que una caja nueva solo se crea cuando se cumplen las tres condiciones a la vez:
+
+1. El ahorro anual supera el 5% frente a la mejor caja existente compatible
+2. El ahorro anual cubre el costo del diseño nuevo (molde, homologación y puesta en marcha)
+3. El catálogo no supera los 60 tipos; si lo supera, se exige dar de baja un tipo de baja rotación en el mismo acto
+    
+En cualquier otro caso, se asigna una caja existente.
+
+Hoy el proceso va en un sentido: I+D define el envase primario y su disposición, y después se fabrica la caja que haga falta. **La propuesta es invertirlo**. Para cada uno de los 57 tipos de caja se puede publicar **la ventana de dimensiones de producto** que admite —un rango de largo, ancho y alto, más un tope de volumen y de peso— y entregarle esa guía a I+D antes de congelar la disposición interna. Un producto diseñado dentro de una de esas ventanas entra al catálogo con un costo nulo de material y accede desde el primer día a la mejor banda de descuento disponible.
 
 
