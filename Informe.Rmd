@@ -1627,7 +1627,9 @@ De lo cual se desprende el siguiente análisis:
 
 ## Resultados
 
-La optimización propuesta permitió alcanzar el objetivo principal del presente análisis, orientado a la reducción de los costos operativos de la empresa. Como resultado de las mejoras implementadas, el costo total se redujo un **10,11%**, pasando de **USD 209.235.094** a **USD 188.079.375,44**. Esto representa un ahorro absoluto de **USD 21.155.718,56**, lo que evidencia un impacto significativo de las medidas adoptadas sobre la estructura de costos. El ahorro se reparte de la siguiente manera entre los dos componentes: **10%** en flete y **10.76%** en packaging. A continuación, se presentan los principales resultados obtenidos y el aporte de cada componente de la optimización a la reducción alcanzada.
+La optimización propuesta permitió alcanzar el objetivo principal del presente análisis, orientado a la reducción de los costos operativos de la empresa. Como resultado de las mejoras implementadas, el costo total se redujo un **10,11%**, pasando de **USD 209.235.094** a **USD 188.079.375,44**. Esto representa un ahorro absoluto de **USD 21.155.718,56**, lo que evidencia un impacto significativo de las medidas adoptadas sobre la estructura de costos. El ahorro se reparte de la siguiente manera entre los dos componentes: **10%** en flete y **10.76%** en packaging.
+
+En cuanto a la relación costo/volumen, se observa una disminución significativa tras la optimización implementada. Por lo tanto, el costo asociado a la producción de cada producto sería menor bajo el nuevo esquema propuesto, siendo este una alternativa más conveniente para la planificación futura de la empresa.
 
 ```{r}
 
@@ -1732,7 +1734,6 @@ htmltools::div(
   p
 )
 ```
-
 
 
 Una de las claves fue la reducción del portafolio de cajas un **72%**, por lo que ahora se tienen **57** variedades distintas para los 427 productos, por lo que el volumen anual aumenta y accede a bandas de descuento que hoy están fuera de alcance. 
@@ -1896,10 +1897,6 @@ htmltools::div(
 
 
 ```
-
-
-
-
 
 ```{r}
 
