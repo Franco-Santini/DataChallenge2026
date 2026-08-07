@@ -3,6 +3,8 @@ title: "Data Challenge 2026"
 output: 
   rmdformats::material:
     number_sections: true
+    thumbnails: false
+    lightbox: true
 ---
 
 <style>
@@ -68,7 +70,7 @@ En cuanto al precio base por caja, se establecieron tres grosores estandarizados
 
 $C_{flete} = \sum_{p=1}^{5}cantidad \: de \: pallets_p * costo \: de \: envio \: _p$, variando el precio según el destino.
 
-Los envíos dentro de la misma planta ($p$) tienen un costo de USD 150 por pallet, mientras que los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet. Cabe aclarar, que Bonsai Corp solo realizó envios dentro de la misma planta, por lo que todos los pallets tendran un costo de USD 150.
+Los envíos dentro de la misma región ($p$) tienen un costo de USD 150 por pallet, mientras que los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet. Cabe aclarar, que Bonsai Corp solo realizó envios dentro de la misma región, por lo que todos los pallets tendran un costo de USD 150.
 
 ## Objetivo secundario
 
@@ -88,7 +90,7 @@ Estas métricas permitirán analizar si la reducción de costos se acompaña de 
 
 - **Configuración interna fija:** la cantidad de envases primarios y su disposición dentro de la caja secundaria no pueden modificarse. La orientación de la caja también es fija, por lo que la dimensión de altura siempre corresponde al eje vertical del pallet.
 
-- **Headspace máximo:** el espacio libre entre el producto y las paredes de la caja no tiene un mínimo exigido, pero sí un máximo permitido según el grosor del cartón: 6% para cajas de hasta 3,0 mm, 8% para cajas de hasta 4,5 mm y 10% para cajas de más de 4,5 mm, con un límite absoluto de 40 mm por eje.
+- **Headspace máximo:** el espacio libre entre el producto y las paredes de la caja no tiene un mínimo exigido, pero sí un máximo permitido según el grosor del cartón: 6% para cajas de hasta 3,0 mm, 8% para cajas de hasta 4,5 mm y 10% para cajas de más de 5 mm, con un límite absoluto de 40 mm por eje.
 
 - **Dimensiones mínimas de la caja:** las dimensiones internas actuales de cada caja representan el tamaño mínimo necesario para contener el producto.
 
@@ -359,6 +361,9 @@ library(tidyr)
 library(base64enc)
 library(DT)
 library(leaflet)
+library(forcats)
+library(gt)
+library(patchwork)
 
 procurement <- read.csv("Datos modificados/procurement_modificado.csv")
 catalogo_especificaciones <- read.csv("Datos modificados/catalogo_especificaciones.csv")
@@ -675,7 +680,7 @@ prom_uti_pallet = mean(catalogo_especificaciones_operaciones$utilizacion)
 <!-- g_utilizacion -->
 <!-- ``` -->
 
-Los porcentaje de utilización de los pallets de los productos oscilan del **64,1%** al **99,1%**, con una media del **83,6%**. Mejorar estos resultados permitirá reducir el número de estos que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
+Los porcentaje de utilización de los pallets de los productos oscilan del **64,1%** al **99,1%**, con una media del **83,6%**. Mejorar estos resultados permitirá reducir el número de pallets que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
 
 ```{r}
 # 
@@ -867,7 +872,7 @@ resumen_plantas <- catalogo_especificaciones_operaciones %>%
   number(costo_unitario_pond, accuracy = 0.001, decimal.mark = ",")
   ))
 
-leaflet(resumen_plantas) %>%
+mapa_plantas <- leaflet(resumen_plantas) %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addCircleMarkers(
     lng = ~longitud,
@@ -893,6 +898,11 @@ leaflet(resumen_plantas) %>%
     labels = "Tamaño del punto: Volumen anual",
     opacity = 0.8
   )
+
+htmltools::div(
+  style = "width: 50%; margin: 0 auto; margin-top: 30px; margin-bottom: 30px;",
+  mapa_plantas
+)
 ```
 
 
@@ -1017,7 +1027,7 @@ htmltools::div(
 
 Se observa que la planta de Monterrey es la menos eficiente en términos de consolidación de cajas, ya que, más de la mitad de las mismas no llega al volúmen mínimo para no presentar recargas. Por otro lado, la planta de Curitiba es la que presenta una mayor proporción de cajas con descuentos del 30%, alcanzando un 12,5% del total para esa planta, así como también la menor cantidad de cajas con recargos del 10%, alcanzando un 26,7% del total.
 
-Es importante resaltar que en todas las plantas, la categoría mas frecuente entre los ajuste para el precio base fue la recarga del 10%, dejando en clara evidencia la necesidad de una mejora en la consolidación del catálogo.
+Es importante resaltar que en todas las plantas, la categoría mas frecuente entre los ajustes para el precio base fue la recarga del 10%, dejando en clara evidencia la necesidad de una mejora en la consolidación del catálogo.
 
 Este análisis permite identificar las plantas con mayor potencial de ahorro en costos de packaging. Sin embargo, la cantidad de cajas en cada nivel de ajuste no refleja, por sí sola, su impacto económico: también debe considerarse el volumen de ventas que estas representan. Por ejemplo, que el 70% de los tipos de caja presenten un recargo del 10% no necesariamente constituye un problema significativo si dichas cajas concentran un volumen bajo, del total comercializado. Por ello, resulta fundamental complementar este análisis con la proporción del volumen de ventas afectada por cada nivel de ajuste, ya que este indicador permite evaluar con mayor precisión la eficiencia real de cada planta.
 
@@ -1149,7 +1159,7 @@ htmltools::div(
 
 Al analizar la distribución del volumen, el panorama cambia considerablemente. Aunque Monterrey presenta la mayor proporción de tipos de caja con recargo del 10%, resulta ser la planta más eficiente en términos de volumen. Esto se debe a que las 27 cajas con recargos (que representan al 51,9% del total de cajas para esa planta) solo representan el 0,8% del volumen total de ventas. Tiene sentido que así sea, ya que a mayor volumen mayor descuento, pero da indicios de que el margén económico de mejora no es tan grande como se podía intuir con el gráfico anterior.
 
-En cambio, Bakersfield se destaca por concentrar un volumen grande (35,8%) en cajas que reciben un descuento del 20%. Si parte de esos volúmenes pudiera consolidarse en una menor cantidad de tipos de caja y se alcanzara el umbral requerido para obtener un descuento del 30%, podría generarse una reducción significativa en los costos de packaging de esa planta.
+En cambio, Bakersfield se destaca por concentrar un volumen grande (35,8%) en cajas que reciben un descuento del 20%. Si parte de esos volúmenes pudieran consolidarse en una menor cantidad de tipos de caja y se alcanzara el umbral requerido para obtener un descuento del 30%, podría generarse una reducción significativa en los costos de packaging de esa planta.
 
 
 ### Costos
@@ -1328,7 +1338,7 @@ Se puede observar que la planta de Curitiba es la que mayores costos tiene, sien
 
 ### Matriz de compatibilidad
 
-Como punto de partida se decidió identificar opciones de mejora en cuanto a la asignación de productos, dentro del universo de cajas existentes en nuestro catálogo. En particular, se obtuvo una matriz que permitiera responder a la siguiente pregunta: *Para cada uno de los 427 productos, ¿cuáles de las 204 cajas existentes podrían contenerlo respetando todas las restricciones, bajo cada grosor permitido?*
+Como punto de partida se decidió identificar opciones de mejora en cuanto a la asignación de productos, dentro del universo de cajas existentes en el catálogo. En particular, se obtuvo una matriz que permitiera responder a la siguiente pregunta: *Para cada uno de los 427 productos, ¿cuáles de las 204 cajas existentes podrían contenerlo respetando todas las restricciones, bajo cada grosor permitido?*
 
 Esto generó 3 matrices de compatibilidad, de 427 (productos) filas y 204 (cajas) columnas, donde cada celda tomaba el valor 1 si el producto podía utilizar esa caja en base a las restricciones y 0 en caso contrario. Finalmente analizando el universo completo, se presentaron **427 × 204 × 3 = 261.324** combinaciones posibles. Identificando si para cada cruce de producto, caja existente y grosor, se cumplian las siguientes restricciones.
 
@@ -1342,8 +1352,7 @@ donde $h$ vale $0,06$, $0,08$ o $0,10$ según el grosor. También se exige que e
 
 A continuación se visualiza una muestra pequeña de cajas y productos, para un grosor en particular, que permite entender de mejor manera el resultado final de la *matriz de compatibilidad*.
 
-```{r}
-library(forcats)
+```{r, fig.align='center', out.width='85%'}
 
 compat <- readRDS("Datos modificados/compatibilidad_producto_caja.rds")
 
@@ -1403,7 +1412,7 @@ ggplot(muestra, aes(x = caja_id_corto, y = fct_rev(producto_f), fill = compatibl
 
 Se obtuvo de esta manera cada una de las combinaciones posibles entre productos y cajas existentes para cada grosor, los cuales permitiran formar nuevos grupos de productos más eficientes en términos de costos. Los resultados para cada grosor fueron los siguientes.
 
-```{r}
+```{r, fig.align='center', out.width="90%"}
 # Gráfico de embudo
 
 etapas <- c(
@@ -1533,36 +1542,16 @@ grafico_embudos <- ggplot(embudo_estatico) +
     expand = expansion(add = 0.5)
   ) +
   
-  scale_x_continuous(
-    limits = c(-45000, 45000),
-    breaks = c(-40000, -20000, 0, 20000, 40000),
-    labels = function(x) {
-      number(
-        abs(x),
-        big.mark = ".",
-        decimal.mark = ","
-      )
-    }
-  ) +
-  
   scale_fill_manual(
     values = colores_etapas,
     guide = "none"
   ) +
   
   labs(
-    title = "Embudo de compatibilidad producto–caja",
-    subtitle = paste0(
-      "Cantidad de combinaciones que superan acumulativamente ",
-      "cada restricción"
-    ),
+    title = "Compatibilidad producto–caja",
     x = "Cantidad de combinaciones",
-    y = NULL,
-    caption = paste0(
-      "Cada escenario parte de 87.108 combinaciones producto–caja. ",
-      "El porcentaje se calcula respecto del total inicial."
-    )
-  ) +
+    y = NULL
+    ) +
   
   theme_minimal(
     base_family = "Roboto",
@@ -1584,7 +1573,7 @@ grafico_embudos <- ggplot(embudo_estatico) +
     
     strip.text = element_text(
       face = "bold",
-      size = 12,
+      size = 10,
       color = "#37474F"
     ),
     
@@ -1599,9 +1588,7 @@ grafico_embudos <- ggplot(embudo_estatico) +
       size = 10
     ),
     
-    axis.text.x = element_text(
-      color = "#607D8B"
-    ),
+    axis.text.x = element_blank(),
     
     panel.grid.major.y = element_blank(),
     panel.grid.minor = element_blank(),
@@ -1625,9 +1612,156 @@ De lo cual se desprende el siguiente análisis:
 
 - En este universo inicial de cajas existentes, la resistencia no elimina alternativas adicionales.
 
+
+### Generación de otras cajas candidatas
+
+La matriz de compatibilidad inicial permite analizar las restricciones y evaluar las posibilidades de reasignación dentro de las cajas ya existentes. Sin embargo esta alternativa podría no optimizar los costos de la empresa, dado que es posible diseñar nuevas cajas.
+
+La idea es construir un nuevo conjunto de diseños, que resulten eficientes computacionalmente y útiles para la minimización de costos. De manera que se obtengan:
+
+-   cajas eficientes para el pallet
+
+-   cajas que pueden ser compartidas por más de un producto
+
+#### Cajas eficientes en términos de utilización del pallet
+
+Además de conservar las dimensiones de las cajas actuales como alternativas de referencia, se generó para cada producto una caja candidata orientada a maximizar el aprovechamiento del pallet. Un patrón de pallet $(n_L,n_W,n_H)$ indica la cantidad de cajas ubicadas sobre cada uno de sus ejes. Por ejemplo, un patrón $(2,4,6)$ representa dos cajas sobre los 800 mm de largo, cuatro sobre los 1200 mm de ancho y seis capas sobre los 1800 mm de altura, alcanzando una capacidad total de 48 cajas por pallet.
+
+Para cada producto se determinó primero el intervalo de dimensiones internas admisibles. A partir de su límite inferior, se enumeraron los patrones de apilado potencialmente alcanzables y se verificó, para cada uno, que existiera una caja que cumpliera simultáneamente las restricciones de dimensiones, volumen y resistencia. Entre las alternativas factibles se seleccionó aquella que permitía transportar la mayor cantidad de cajas por pallet.
+
+Cuando dos alternativas presentaban la misma capacidad, se conservó la de menor volumen interno. De este modo, el procedimiento prioriza la eficiencia logística sin generar cajas innecesariamente sobredimensionadas.
+
+Por ejemplo para el producto BR0001:
+
+--EJEMPLO--
+
+En este caso, el redimensionamiento permitió incorporar una capa adicional, aumentando en un 20% la cantidad de cajas transportadas por pallet.
+
+#### Cajas compartidas por productos
+
+Se cuenta con **90.951** = $\binom{427}{2}$ pares posibles de cajas. Aunque no todos los pares de productos podrían tener una caja compatible entre si. Basicamente, dos productos tienen potencial para compartir una caja si sus intervalos admisibles se superponen en los tres ejes y, además, la intersección debe permitir el volumen del producto más voluminoso.
+
+A partir de este cruce, se encontraron **30.291** pares geométricamente compatibles. Para cada uno se construye una caja candidata.
+
+Como tener esa cantidad de cajas candidatas nuevas podía ser muy costoso computacionalmente se definió un una medida de similitud basada en las proporciones entre largo, ancho y alto. Por lo que para cada producto se conservó únicamente sus (K) vecinos factibles más cercanos. Parámetro que puede modificarse en tanto se necesite, particularmente en este caso se trabajo con K = 12.
+
+#### Nueva matriz de compatibilidad
+
+Contemplando los nuevos enfoques, las cantidad de cajas candidatas se expandió a **5.894** posibles, es decir, 427 (productos) × 5.894 (cajas candidatas) = **2.516.738** asignaciones potenciales para cada grosor.
+
+### Algoritmo greedy + busqueda local
+
+Como primer técnica de optimización, se implementó una heurística con el objetivo de obtener rápidamente una solución factible y comparar los tres grosores disponibles. Para cada escenario se utilizó como espacio de búsqueda la matriz de compatibilidad construida previamente, de forma que cada producto pudiera ser asignado únicamente a cajas que cumplieran todas las restricciones.
+
+El algoritmo realiza lo siguiente:
+
+1) Ordena los productos de mayor a menor volumen total de ventas.
+
+2) Toma el producto de mayor volumen.
+
+3) Entre todas sus cajas factibles, calcula cuál genera el menor incremento inmediato en el costo total y lo asigna a esa caja.
+
+4) Pasa al siguiente producto y repite, teniendo en cuenta los volúmenes que ya se fueron acumulando en cada caja. Así para los 427 productos.
+
+Ahí termina una *construcción greedy completa*. Después comienza con la *busqueda local por reubicación de productos*.
+
+5) Evalua para cada producto *¿que pasa si lo saca de su caja actual y lo traslada a otra caja factible?*, en caso de generar descuentos en los costos lo mueve.
+
+6) Evalua el siguiente producto de la misma manera, así con todos los productos, completando **una pasada** de búsqueda local.
+
+7) Repite este procedimiento por 10 pasadas, ya que los movimientos anteriores pueden haber cambiado los tiers de descuento.
+
+Luego de este procedimiento, vuelve a comenzar cambiando el orden de los productos. Generando de esta manera **10 construcciones greedy** con **10 pasadas** de búsqueda local cada una.
+
+<p align="center">
+
+<img src="img/greedy_busqueda_local.gif" width="400"/>
+
+</p>
+
+<!-- En segundo lugar, se generaron cajas comunes para pares de productos geométricamente compatibles. Para que dos productos pudieran compartir una caja, sus intervalos admisibles debían superponerse en los tres ejes y la intersección debía permitir contener el mayor de sus volúmenes originales. De los (90.951) pares posibles entre los 427 productos, (30.291) cumplieron estas condiciones preliminares. Para cada uno de ellos se construyó una caja común con el mayor aprovechamiento posible del pallet. -->
+
+<!-- La generación a partir de pares no implica que esos dos productos deban utilizar necesariamente la caja diseñada. Cada candidata fue posteriormente evaluada contra los 427 SKU; por lo tanto, el modelo pudo asignarla a cualquier producto que cumpliera todas las restricciones. Esta estrategia permitió incorporar alternativas de consolidación sin imponer grupos de productos de manera previa. -->
+
+```{r}
+
+costo_inicial <- 209235094
+
+tabla_heuristica <- tibble(
+  Grosor = c("3,0 mm", "4,5 mm", "5,0 mm"),
+  Costo_total_estimado = c(188650000, 196010000, 198880000)
+) %>%
+  mutate(
+    Descuento = 100 * (costo_inicial - Costo_total_estimado) / costo_inicial
+  )
+
+tabla_heuristica %>%
+  gt() %>%
+  fmt_currency(
+    columns = Costo_total_estimado,
+    currency = "USD",
+    decimals = 0,
+    sep_mark = ".",
+    dec_mark = ","
+  ) %>%
+  fmt_percent(
+    columns = Descuento,
+    decimals = 2,
+    scale_values = FALSE,
+    dec_mark = ","
+  ) %>%
+  cols_label(
+    Grosor = "Grosor",
+    Costo_total_estimado = "Costo total estimado",
+    Descuento = "Ahorro"
+  )
+```
+
+La comparación mostró que el escenario de 3,0 mm presentó el menor costo total entre las soluciones heurísticas. En consecuencia, este grosor se seleccionó como escenario prioritario para la optimización final mediante programación matemática.
+
+La heurística constituye una aproximación inicial y no garantiza alcanzar el óptimo global, ya que las asignaciones se construyen secuencialmente y las mejoras posteriores se realizan mediante movimientos individuales. Por este motivo, la solución obtenida se utilizó como punto de referencia para el modelo de optimización final.
+
+### OR-Tools CP-SAT
+
+A partir del escenario de 3,0 mm seleccionado mediante la heurística, se formuló un modelo de programación entera para optimizar simultáneamente la asignación de los productos a las cajas candidatas. A diferencia de la aproximación heurística, que construye la solución mediante decisiones secuenciales y mejoras locales, este enfoque considera conjuntamente todas las asignaciones posibles dentro de la matriz de factibilidad.
+
+Se utilizó **OR-Tools CP-SAT**, el cual es un solucionador diseñado principalmente para resolver problemas de programación entera pura y satisfacción de restricciones, utilizando tecnología de solucionadores booleanos (*SAT*) combinada con técnicas de programación en restricciones (*CP*).
+
+#### Dominancia de cajas
+
+Como punto de partida, se aplicó una **reducción exacta por dominancia**, eliminando cajas que podían ser reemplazadas por otra con igual o mayor capacidad de pallet y un conjunto de productos compatibles más amplio. De esta forma, el problema se redujo de 5.894 candidatas iniciales a 953 candidatas, y de 184.457 asignaciones posibles a 32.808, sin alterar el óptimo del universo considerado.
+
+#### Variables de decisión y restricciones
+
+Para cada una de las 32.808 asignaciones posibles se definió una variable dicotómica, que toma valor 1 cuando el producto $i$ es asignado a la caja $c$, y 0 en caso contrario. Cada producto debe ser asignado exactamente a una de sus cajas compatibles:
+
+$$\sum_{c \in C_i} x_{ic}=1$$
+
+#### Función objetivo
+
+El costo logístico de cada asignación fue precalculado a partir de la capacidad de pallet de la caja candidata.
+
+$$\sum_{i,c}C^{flete}_{ic}x_{ic}$$
+
+En cambio, el costo de packaging depende de la solución completa, ya que los descuentos se determinan por el volumen consolidado de cada tipo de caja en cada planta, de esta manera siendo el volumen total de la caja $c$ en la planta $p$:
+
+$$Q_{cp}=\sum_iv_{ip}x_{ic}$$
+donde $v_{ip}$ es la cantidad de ventas del producto $i$ en la planta $p$.
+
+Como los precios base de cada caja van a depender del tier de descuentos que presenten a partir del volumen de ventas, el costo por packagin finalmente resulta
+
+$$\sum_{c,p}Q_{cp}precio(Q_{cp})$$
+
+Y la **función objetivo** resulta:
+
+$$min(\sum_{i,c}C^{flete}_{ic}x_{ic}+\sum_{c,p}Q_{cp}precio(Q_{cp}))$$
+
+Una vez definidos todos estos parámetros, **CP-SAT** busca simultáneamente la combinación de asignaciones que minimiza ese costo mediante **arboles de decisión**. El modelo fue inicializado a partir de una solución factible previa, utilizada como *warm start*, con el objetivo de acelerar la búsqueda de mejores soluciones. Al concluir estos procedimientos se encontró una solución de USD 188.079.384,24, compuesta por USD 26.921.184,24 de packaging y USD 161.158.200 de flete. Frente al costo inicial de USD 209.235.093,94, representa un ahorro de USD 21.155.709,70, y un descuento del 10,11098%.
+
+
 ## Resultados
 
-La optimización propuesta permitió alcanzar el objetivo principal del presente análisis, orientado a la reducción de los costos operativos de la empresa. Como resultado de las mejoras implementadas, el costo total se redujo un **10,11%**, pasando de **USD 209.235.094** a **USD 188.079.375,44**. Esto representa un ahorro absoluto de **USD 21.155.718,56**, lo que evidencia un impacto significativo de las medidas adoptadas sobre la estructura de costos. El ahorro se reparte de la siguiente manera entre los dos componentes: **10%** en flete y **10.76%** en packaging.
+La optimización propuesta permitió alcanzar el objetivo principal del presente análisis, orientado a la reducción de los costos operativos de la empresa. Como resultado de las mejoras implementadas, el costo total se redujo un **10,11%**, pasando de **USD 209.235.094** a **USD 188.079.375,44**. Esto representa un ahorro absoluto de **USD 21.155.718,56**, lo que evidencia un impacto significativo de las medidas adoptadas sobre la estructura de costos. El ahorro se reparte de la siguiente manera entre los dos componentes: **10%** en flete y **10,76%** en packaging.
 
 En cuanto a la relación costo/volumen, se observa una disminución significativa tras la optimización implementada. Por lo tanto, el costo asociado a la producción de cada producto sería menor bajo el nuevo esquema propuesto, siendo este una alternativa más conveniente para la planificación futura de la empresa.
 
@@ -1796,7 +1930,7 @@ cajas <- optimo %>%
   count(caja_exterior_largo, caja_exterior_ancho, caja_exterior_alto, name = "cantidad_productos") %>%
   arrange(desc(cantidad_productos))
 
-g8 <- ggplot(cajas) + aes(x = cantidad_productos,
+g6 <- ggplot(cajas) + aes(x = cantidad_productos,
       text = paste0("Productos por caja: ", after_stat(x),
                     "<br>Cantidad de cajas: ", after_stat(count),
                     "<br>Porcentaje de cajas: ", round(100 * after_stat(prop), 4), "%")) +
@@ -1813,15 +1947,15 @@ g8 <- ggplot(cajas) + aes(x = cantidad_productos,
 
 htmltools::div(
   style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
-  ggplotly(g8, tooltip = "text")
+  ggplotly(g6, tooltip = "text")
 )
 ```
 
-Al rediseñar las cajas dentro del margen permitido para que aprovechen mejor la superficie del pallet, la cantidad promedio de cajas por pallet sube de **59** a **65,7**. Eso significa **119.743** pallets menos por año saliendo de las cinco plantas, con el mismo volumen de producto, pasando de **1.193.792** a **1.074.049** pallets anuales, es decir una reducción del **10%**. 
+Al rediseñar las cajas dentro del margen permitido para optimizar el aprovechamiento volumétrico del pallet, la cantidad promedio de cajas por pallet sube de **59** a **65,7**. Eso representa **119.743** pallets menos por año saliendo de las cinco plantas, con el mismo volumen de producto, pasando de **1.193.792** a **1.074.049** pallets anuales, es decir una reducción del **10%**. 
 
 El mayor aprovechamiento de las dimensiones del pallet antes mencionado, puede verse mejor en los siguientes gráficos, en los cuales se destaca que la utilización promedio subió de un **83,6%** a un **94,9%**:
 
-```{r}
+```{r, fig.align='center', out.width= '85%'}
 # Dimensiones del pallet (mm)
 PALLET_LARGO  <- 1200
 PALLET_ANCHO  <- 800
@@ -1870,11 +2004,6 @@ g9 <- ggplot(catalogo_especificaciones_operaciones,
     panel.grid = element_blank()
   )
 
-htmltools::div(
-  style = "display: flex; justify-content: center; margin-top: 30px;",
-  ggplotly(g9, tooltip = "text")
-)
-
 g10 <- ggplot(cajas_utilizacion,
               aes(x = utilizacion_pallet_pct)) +
   geom_histogram(color = "black", fill = "#009587", bins = 10) +
@@ -1889,13 +2018,7 @@ g10 <- ggplot(cajas_utilizacion,
     plot.title = element_text(hjust = 0.5, size = 12),
     panel.grid = element_blank())
 
-htmltools::div(
-  style = "display: flex; justify-content: center; margin-bottom: 30px;",
-  ggplotly(g10, tooltip = "text")
-)
-
-
-
+g9 / g10
 ```
 
 ```{r}
