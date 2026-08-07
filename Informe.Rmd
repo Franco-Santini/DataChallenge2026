@@ -5,6 +5,30 @@ output:
     number_sections: true
 ---
 
+<style>
+h1.title {
+  position: relative;
+  overflow: visible;
+}
+
+h1.title::before {
+  content: "";
+  position: absolute;
+  left: 23%;
+  transform: translateX(-50%);
+
+  width: 840px;
+  height: 180px;
+
+  bottom: calc(100% - 70px);
+
+  background-image: url("img/alix.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+</style>
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo = FALSE,
@@ -15,12 +39,12 @@ knitr::opts_chunk$set(
 
 # Introducción {#introduccion} 
 
-Bonsai Corp es una empresa de brócoli congelado, en donde los productos se comercializan en un envase primario que contiene al alimento, y estos son colocados en cajas de cartón (envase secundario) para almacenarlos y transportarlos desde 5 plantas hacia 5 regiones distribuidas por el mundo. Esta cajas son apiladas en pallets de 1200 × 800 mm y altura máxima de carga de 1800 mm. Los envíos dentro de la misma región tienen un costo de USD 150 por pallet; los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet.
+Bonsai Corp es una empresa de brócoli congelado, en donde los productos se comercializan en un envase primario que contiene al alimento, y estos son colocados en cajas de cartón (envase secundario) para almacenarlos y transportarlos desde 5 plantas hacia 5 regiones distribuidas por el mundo. Esta cajas son apiladas en pallets de 1200 × 800 mm y altura máxima de carga de 1800 mm.
 
 El catalogo está compuesto de 427 productos, cada uno de los cuales tiene asignado un tipo de caja de acuerdo con sus características. Si bien algunos productos comparten el mismo envase secundario, actualmente se utilizan 204 tipos de caja diferentes. La incorporación progresiva de nuevos productos y diseños dio lugar a un portafolio de packaging altamente fragmentado, en el que cada tipo de caja requiere su propio molde, corridas de producción y espacio de almacenamiento, generando *altos costos de packaging, logística e inventario*. Ante cada lanzamiento de un nuevo producto, estos costos siguen en aumento, y la necesidad de hacer algo para bajarlos es imperiosa.
 
 <p align="center">
-<img src="img/brocoli.jpg" width="400"/>
+  <img src="img/brocoli.jpg" style="width:100%; max-width:1200px;"/>
 </p>
 
 # Objetivos
@@ -44,7 +68,7 @@ En cuanto al precio base por caja, se establecieron tres grosores estandarizados
 
 $C_{flete} = \sum_{p=1}^{5}cantidad \: de \: pallets_p * costo \: de \: envio \: _p$, variando el precio según el destino.
 
-Los envíos dentro de la misma planta ($p$) tienen un costo de USD 150 por pallet, mientras que los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet.
+Los envíos dentro de la misma planta ($p$) tienen un costo de USD 150 por pallet, mientras que los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet. Cabe aclarar, que Bonsai Corp solo realizó envios dentro de la misma planta, por lo que todos los pallets tendran un costo de USD 150.
 
 ## Objetivo secundario
 
@@ -332,6 +356,9 @@ library(tibble)
 library(tidyr)
 library(ggridges)
 library(tidyr)
+library(base64enc)
+library(DT)
+library(leaflet)
 
 procurement <- read.csv("Datos modificados/procurement_modificado.csv")
 catalogo_especificaciones <- read.csv("Datos modificados/catalogo_especificaciones.csv")
@@ -366,7 +393,7 @@ g1 = catalogo_especificaciones_operaciones |>
         panel.grid = element_blank())
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   ggplotly(g1, tooltip = "text")
 )
 
@@ -384,7 +411,7 @@ Bajo el panorama actual, la asignación de los productos a las cajas está lejos
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   plot_ly(data = especificaciones_procurement,
           x = ~caja_interior_ancho,
           y = ~caja_interior_largo,
@@ -427,8 +454,6 @@ Esto deja en evidencia que es posible agrupar distintos productos en cajas ident
 En el año de estudio, la empresa necesito despachar **1.193.792** pallets, valor muy influenciado por un uso poco eficiente de los mismos. El porcentaje de utilización de los pallets se presenta a continuación:
 
 ```{r}
-library(plotly)
-library(base64enc)
 
 g2 = ggplot(catalogo_especificaciones_operaciones) +
   aes(x = 100 * utilizacion) +
@@ -470,7 +495,7 @@ g2_interactivo <- ggplotly(g2) %>%
   )
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   g2_interactivo
 )
 ```
@@ -650,7 +675,7 @@ prom_uti_pallet = mean(catalogo_especificaciones_operaciones$utilizacion)
 <!-- g_utilizacion -->
 <!-- ``` -->
 
-Los porcentaje de utilización de los pallets de los productos oscilan del 64,1% al 99,1%, con una media del 83,6%. Mejorar estos resultados permitirá reducir el número de estos que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
+Los porcentaje de utilización de los pallets de los productos oscilan del **64,1%** al **99,1%**, con una media del **83,6%**. Mejorar estos resultados permitirá reducir el número de estos que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
 
 ```{r}
 # 
@@ -687,15 +712,11 @@ Los porcentaje de utilización de los pallets de los productos oscilan del 64,1%
 
 ### Volúmen 
 
-El volúmen de venta anual para Bonsai Corp fue de **62.420.911** cajas de productos, las cuales presentaron una cantidad de ventas muy heterogénea según el tipo de producto, la estacionalidad, etc. Particularmente, los diez productos de mayor volumen concentran el 25,7% del total.
+El volúmen de venta anual para Bonsai Corp fue de **62.420.911** cajas de productos, las cuales presentaron una cantidad de ventas muy heterogénea según el tipo de producto, la estacionalidad, etc. Particularmente, los diez productos de mayor volumen concentran el **25,7%** del total.
 
 A continuación se presenta una tabla interactiva que permite al usuario navegar entre las distintas caracteristicas del producto y evaluar su rendimiento en ventas para el año en estudio.
 
 ```{r tabla-volumen-productos}
-library(DT)
-library(dplyr)
-library(scales)
-library(htmltools)
 
 tabla_volumen_productos <- catalogo_especificaciones_operaciones %>%
   group_by(caja_tipo_id) %>%
@@ -793,14 +814,9 @@ datatable(
 ```
 
 
-A su vez, la producción de Bonsai Corp se encuentra distribuida en cinco plantas localizadas en Argentina, Brasil, Chile, México y Estados Unidos. En cada una de las sucursales el volumen de venta difiere, siendo la planta que mejores rendimientos presenta es la de Curitiba: con un total de X cajas de productos vendidas.
+A su vez, la producción de Bonsai Corp se encuentra distribuida en cinco plantas localizadas en Argentina, Brasil, Chile, México y Estados Unidos. En cada una de las sucursales el volumen de venta difiere, siendo la planta que mejores rendimientos presenta es la de Curitiba: con un total de **22.676.999** cajas de productos vendidas.
 
 ```{r, fig.align='center'}
-library(dplyr)
-library(tidyr)
-library(leaflet)
-library(scales)
-library(htmltools)
 
 # Resumen anual por planta
 resumen_plantas <- catalogo_especificaciones_operaciones %>%
@@ -887,12 +903,6 @@ Estas cantidades tienen relación directa con el precio del packaging, ya que al
 Los descuentos a los costos base se determinan de forma independiente para cada tipo de caja y planta, según el volumen anual adquirido. Por analizar este fenómeno, se presentan dos perspectivas complementarias: la cantidad de tipos de caja alcanzada por cada nivel de descuento y la distribución del volumen anual asociado. Mientras la primera permite identificar las oportunidades de consolidación del catálogo en cada planta, la segunda dimensiona su relevancia económica.
 
 ```{r}
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(scales)
-library(plotly)
-library(htmltools)
 
 resumen_cajas_descuentos <- especificaciones_procurement %>%
   select(
@@ -966,7 +976,7 @@ g_cantidad_cajas <- ggplot(
   resumen_cajas_descuentos,
   aes(x = planta, y = participacion, fill = ajuste, text = texto)
 ) +
-  geom_col(width = 0.72, color = "white", linewidth = 0.45) +
+  geom_col(width = 0.72, color = "black", linewidth = 0.5) +
   scale_fill_manual(
     values = paleta_descuentos,
     drop = FALSE,
@@ -984,15 +994,16 @@ g_cantidad_cajas <- ggplot(
   ) +
   theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.title = element_text(hjust = 0.5, , size = 12),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
+    panel.grid = element_blank(),
     legend.position = "bottom",
     legend.title = element_text(face = "bold")
   )
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   ggplotly(g_cantidad_cajas, tooltip = "text") %>%
     layout(
       legend = list(
@@ -1011,12 +1022,6 @@ Es importante resaltar que en todas las plantas, la categoría mas frecuente ent
 Este análisis permite identificar las plantas con mayor potencial de ahorro en costos de packaging. Sin embargo, la cantidad de cajas en cada nivel de ajuste no refleja, por sí sola, su impacto económico: también debe considerarse el volumen de ventas que estas representan. Por ejemplo, que el 70% de los tipos de caja presenten un recargo del 10% no necesariamente constituye un problema significativo si dichas cajas concentran un volumen bajo, del total comercializado. Por ello, resulta fundamental complementar este análisis con la proporción del volumen de ventas afectada por cada nivel de ajuste, ya que este indicador permite evaluar con mayor precisión la eficiencia real de cada planta.
 
 ```{r}
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(scales)
-library(plotly)
-library(htmltools)
 
 # Distribución del volumen anual según el ajuste de precio aplicable en cada planta
 resumen_descuentos <- especificaciones_procurement %>%
@@ -1101,8 +1106,8 @@ g_descuentos <- ggplot(
 ) +
   geom_col(
     width = 0.72,
-    color = "white",
-    linewidth = 0.4
+    color = "black",
+    linewidth = 0.5
   ) +
   scale_fill_manual(
     values = paleta_descuentos,
@@ -1120,15 +1125,16 @@ g_descuentos <- ggplot(
   ) +
   theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.title = element_text(hjust = 0.5, size = 12),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
+    panel.grid = element_blank(),
     legend.position = "bottom",
     legend.title = element_text(face = "bold")
   )
 
 htmltools::div(
-  style = "display: flex; justify-content: center;",
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
   ggplotly(g_descuentos, tooltip = "text") %>%
     layout(
       legend = list(
@@ -1146,127 +1152,11 @@ Al analizar la distribución del volumen, el panorama cambia considerablemente. 
 En cambio, Bakersfield se destaca por concentrar un volumen grande (35,8%) en cajas que reciben un descuento del 20%. Si parte de esos volúmenes pudiera consolidarse en una menor cantidad de tipos de caja y se alcanzara el umbral requerido para obtener un descuento del 30%, podría generarse una reducción significativa en los costos de packaging de esa planta.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r, fig.width=6, fig.height=5, fig.align='center'}
-
-# Descuentos por planta
-
-# g2 = ggplot(especificaciones_procurement) +
-#   aes(x = descuento_planta_buenos_aires,
-#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-#                     "<br>Cantidad: ", after_stat(count))) +
-#   geom_bar(color = "black", fill = "#009587", width = 8) +
-#   scale_x_continuous(
-#     breaks = unique(especificaciones_procurement$descuento_planta_buenos_aires),
-#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-#   ) +
-#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Buenos Aires") +
-#   theme_minimal() +
-#   theme(plot.title = element_text(hjust = 0.5),
-#         panel.grid = element_blank())
-# 
-# htmltools::div(
-#   style = "display: flex; justify-content: center;",
-#   ggplotly(g2, tooltip = "text")
-# )
-# 
-# g3 = ggplot(especificaciones_procurement) +
-#   aes(x = descuento_planta_curitiba,
-#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-#                     "<br>Cantidad: ", after_stat(count))) +
-#   geom_bar(color = "black", fill = "#009587", width = 8) +
-#   scale_x_continuous(
-#     breaks = unique(especificaciones_procurement$descuento_planta_curitiba),
-#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-#   ) +
-#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Curitiba") +
-#   theme_minimal() +
-#   theme(plot.title = element_text(hjust = 0.5),
-#         panel.grid = element_blank())
-# 
-# htmltools::div(
-#   style = "display: flex; justify-content: center;",
-#   ggplotly(g3, tooltip = "text")
-# )
-# 
-# g4 = ggplot(especificaciones_procurement) +
-#   aes(x = descuento_planta_santiago,
-#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-#                     "<br>Cantidad: ", after_stat(count))) +
-#   geom_bar(color = "black", fill = "#009587", width = 8) +
-#   scale_x_continuous(
-#     breaks = unique(especificaciones_procurement$descuento_planta_santiago),
-#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-#   ) +
-#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Santiago") +
-#   theme_minimal() +
-#   theme(plot.title = element_text(hjust = 0.5),
-#         panel.grid = element_blank())
-# 
-# htmltools::div(
-#   style = "display: flex; justify-content: center;",
-#   ggplotly(g4, tooltip = "text")
-# )
-# 
-# g5 = ggplot(especificaciones_procurement) +
-#   aes(x = descuento_planta_monterrey,
-#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-#                     "<br>Cantidad: ", after_stat(count))) +
-#   geom_bar(color = "black", fill = "#009587", width = 8) +
-#   scale_x_continuous(
-#     breaks = unique(especificaciones_procurement$descuento_planta_monterrey),
-#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-#   ) +
-#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Monterrey") +
-#   theme_minimal() +
-#   theme(plot.title = element_text(hjust = 0.5),
-#         panel.grid = element_blank())
-# 
-# htmltools::div(
-#   style = "display: flex; justify-content: center;",
-#   ggplotly(g5, tooltip = "text")
-# )
-# 
-# g6 = ggplot(especificaciones_procurement) +
-#   aes(x = descuento_planta_bakersfield,
-#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-#                     "<br>Cantidad: ", after_stat(count))) +
-#   geom_bar(color = "black", fill = "#009587", width = 8) +
-#   scale_x_continuous(
-#     breaks = unique(especificaciones_procurement$descuento_planta_bakersfield),
-#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-#   ) +
-#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Bakersfield") +
-#   theme_minimal()+
-#   theme(plot.title = element_text(hjust = 0.5),
-#         panel.grid = element_blank())
-# 
-# htmltools::div(
-#   style = "display: flex; justify-content: center;",
-#   ggplotly(g6, tooltip = "text")
-# )
-
-```
-
-
 ### Costos
 
 Dado que el objetivo principal del presente análisis es reducir los costos de la empresa, a continuación se presenta un panorama general de la estructura actual de gastos, con el propósito de identificar sus principales componentes y comprender el origen de cada uno de ellos.
 
-El costo total de Bonsai Corp en la actualidad es de **209.235.094 USD**, los cuales **30.166.294 USD** provienen de costos de packaging y **179.068.800** USD de costos de traslados.
+El costo total de Bonsai Corp en la actualidad es de **USD 209.235.094**, los cuales **USD 30.166.294** provienen de costos de packaging y **USD 179.068.800** de costos de traslados.
 
 A continuación, se presenta un gráfico destinado a evaluar la eficiencia relativa de cada planta, mediante la comparación entre sus costos y la relación costo/volumen. Este análisis resulta necesario, ya que una planta con mayores costos absolutos no es necesariamente la menos eficiente, sino que dichos costos deben interpretarse en función del volumen que procesa.
 
@@ -1739,6 +1629,112 @@ De lo cual se desprende el siguiente análisis:
 
 La optimización propuesta permitió alcanzar el objetivo principal del presente análisis, orientado a la reducción de los costos operativos de la empresa. Como resultado de las mejoras implementadas, el costo total se redujo un **10,11%**, pasando de **USD 209.235.094** a **USD 188.079.375,44**. Esto representa un ahorro absoluto de **USD 21.155.718,56**, lo que evidencia un impacto significativo de las medidas adoptadas sobre la estructura de costos. El ahorro se reparte de la siguiente manera entre los dos componentes: **10%** en flete y **10.76%** en packaging. A continuación, se presentan los principales resultados obtenidos y el aporte de cada componente de la optimización a la reducción alcanzada.
 
+```{r}
+
+asignacion_producto_cluster_procurement <- read.csv("Datos modificados/asignacion_producto_cluster_procurement.csv")
+
+# Costo total por planta post optimizacion
+costo_packaging <- colSums(asignacion_producto_cluster_procurement |> select(costo_total_planta_bakersfield,
+                                                                            costo_total_planta_buenos_aires,
+                                                                            costo_total_planta_curitiba,
+                                                                            costo_total_planta_monterrey,
+                                                                            costo_total_planta_santiago)) 
+
+costo_traslado <- colSums(asignacion_producto_cluster_procurement |> select(costo_pallet_planta_bakersfield,
+                                                                             costo_pallet_planta_buenos_aires,
+                                                                             costo_pallet_planta_curitiba,
+                                                                             costo_pallet_planta_monterrey,
+                                                                             costo_pallet_planta_santiago)) 
+
+
+volumen_por_planta = colSums(asignacion_producto_cluster_procurement |> select(volumen_producto_planta_bakersfield,
+                                                                             volumen_producto_planta_buenos_aires,
+                                                                             volumen_producto_planta_curitiba,
+                                                                             volumen_producto_planta_monterrey,
+                                                                             volumen_producto_planta_santiago)) 
+
+costos_optimizados <- tibble(
+  ciudad = c(
+    "Bakersfield",
+    "Buenos Aires",
+    "Curitiba",
+    "Monterrey",
+    "Santiago"
+  ),
+  costo_packaging = as.numeric(costo_packaging),
+  costo_traslado = as.numeric(costo_traslado),
+  volumen = as.numeric(volumen_por_planta)
+) %>%
+  mutate(
+    costo_volumen = (costo_packaging + costo_traslado) / volumen
+  ) %>%
+  arrange(desc(costo_packaging + costo_traslado)) %>%
+  mutate(
+    ciudad = factor(ciudad, levels = ciudad))
+
+costos_lineas <- costos_plantas %>%
+  select(ciudad, costo_volumen) %>%
+  rename(`Actual` = costo_volumen) %>%
+  left_join(
+    costos_optimizados %>%
+      select(ciudad, costo_volumen) %>%
+      rename(`Optimizado` = costo_volumen),
+    by = "ciudad"
+  ) %>%
+  pivot_longer(
+    cols = c(`Actual`, `Optimizado`),
+    names_to = "escenario",
+    values_to = "costo_volumen"
+  )
+
+g11 <- ggplot(
+  costos_lineas,
+  aes(
+    x = ciudad,
+    y = costo_volumen,
+    group = escenario,
+    color = escenario,
+    text = paste0(
+      "Planta: ", ciudad,
+      "<br>Escenario: ", escenario,
+      "<br>Costo/volumen: ",
+      scales::label_number(decimal.mark = ",")(costo_volumen)
+    )
+  )
+) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 2.5) +
+  labs(
+    title = "Comparación del costo/volumen por planta",
+    x = "Planta",
+    y = "Costo / volumen",
+    color = NULL
+  ) +
+  scale_color_manual(
+    values = c(
+      `Actual` = "#009587",
+      `Optimizado` = "#DEB887"
+    )
+  ) +
+  scale_y_continuous(
+    labels = scales::label_number(decimal.mark = ",")
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 12),
+    panel.grid = element_blank()
+  )
+
+p <- ggplotly(g11, tooltip = "text")
+
+htmltools::div(
+  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
+  p
+)
+```
+
+
+
 Una de las claves fue la reducción del portafolio de cajas un **72%**, por lo que ahora se tienen **57** variedades distintas para los 427 productos, por lo que el volumen anual aumenta y accede a bandas de descuento que hoy están fuera de alcance. 
 
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
@@ -1769,12 +1765,16 @@ g8 = ggplot(waffle, aes(x, y, fill = estado)) +
     width = 0.95,
     height = 0.85
   ) +
+  labs(
+    title = "Cajas optimizadas") +
   scale_fill_manual(values = c(
     "Optimizado" = "#009587",
-    "Resto" = "#bdbdbd"
+    "Resto" = "#e0e0e0"
   )) +
   theme_void() +
   theme(
+    plot.title = element_text(hjust = 0.5, size = 12),
+    panel.grid = element_blank(),
     legend.position = "none",
     plot.margin = margin(10, 10, 10, 10)
   )
@@ -1987,6 +1987,6 @@ En cualquier otro caso, se asigna una caja existente.
 Hoy el proceso va en un sentido: I+D define el envase primario y su disposición, y después se fabrica la caja que haga falta. **La propuesta es invertirlo**. Para cada uno de los 57 tipos de caja se puede publicar **la ventana de dimensiones de producto** que admite —un rango de largo, ancho y alto, más un tope de volumen y de peso— y entregarle esa guía a I+D antes de congelar la disposición interna. Un producto diseñado dentro de una de esas ventanas entra al catálogo con un costo nulo de material y accede desde el primer día a la mejor banda de descuento disponible.
 
 <p align="center">
-<img src="img/protocolo.jpeg" width="400"/>
+<img src="img/protocolo.jpeg" style="width:100%; max-width:1200px;"/>
 </p>
 
