@@ -17,9 +17,7 @@ El desafío consiste en optimizar el portafolio de cajas utilizadas por Bonsai C
 
 El objetivo general puede expresarse como:
 
-\[
-C_{total} = C_{packaging} + C_{flete}
-\]
+$C_{total} = C_{packaging} + C_{flete}$
 
 Para ello, se busca consolidar distintos productos en un menor número de diseños de caja, teniendo en cuenta:
 
