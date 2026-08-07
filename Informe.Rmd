@@ -2,6 +2,7 @@
 title: "Data Challenge 2026"
 output: 
   rmdformats::material:
+    self_contained: true
     number_sections: true
     thumbnails: false
     lightbox: true
@@ -16,7 +17,7 @@ h1.title {
 h1.title::before {
   content: "";
   position: absolute;
-  left: 23%;
+  left: 35%;
   transform: translateX(-50%);
 
   width: 840px;
@@ -349,21 +350,30 @@ Actualmente la empresa cuenta con un portafolio de **204** cajas, las cuales con
 
 ```{r}
 
-library(dplyr)
-library(ggplot2)
-library(plotly)
-library(scales)
-library(htmltools)
-library(tibble)
-library(tidyr)
-library(ggridges)
-library(tidyr)
-library(base64enc)
-library(DT)
-library(leaflet)
-library(forcats)
-library(gt)
-library(patchwork)
+paquetes <- c(
+  "dplyr",
+  "ggplot2",
+  "plotly",
+  "scales",
+  "htmltools",
+  "tibble",
+  "tidyr",
+  "ggridges",
+  "base64enc",
+  "DT",
+  "leaflet",
+  "forcats",
+  "gt",
+  "patchwork"
+)
+
+faltantes <- setdiff(paquetes, rownames(installed.packages()))
+
+if (length(faltantes) > 0) {
+  install.packages(faltantes, dependencies = TRUE)
+}
+
+invisible(lapply(paquetes, library, character.only = TRUE))
 
 procurement <- read.csv("Datos modificados/procurement_modificado.csv")
 catalogo_especificaciones <- read.csv("Datos modificados/catalogo_especificaciones.csv")
@@ -1497,11 +1507,11 @@ embudo_estatico <- compat %>%
   ungroup()
 
 colores_etapas <- c(
-  "Todas las combinaciones" = "#1565C0",
-  "+ Fit ±10%"              = "#1976D2",
-  "+ Volumen"               = "#00897B",
-  "+ Headspace"             = "#43A047",
-  "+ Resistencia"           = "#7CB342"
+  "Todas las combinaciones" = "#006D60",
+  "+ Fit ±10%"              = "#008F7D",
+  "+ Volumen"               = "#65B8AC",
+  "+ Headspace"             = "#D9E1DF",
+  "+ Resistencia"           = "#D18B57"
 )
 
 grafico_embudos <- ggplot(embudo_estatico) +
@@ -1625,25 +1635,82 @@ La idea es construir un nuevo conjunto de diseños, que resulten eficientes comp
 
 #### Cajas eficientes en términos de utilización del pallet
 
-Además de conservar las dimensiones de las cajas actuales como alternativas de referencia, se generó para cada producto una caja candidata orientada a maximizar el aprovechamiento del pallet. Un patrón de pallet $(n_L,n_W,n_H)$ indica la cantidad de cajas ubicadas sobre cada uno de sus ejes. Por ejemplo, un patrón $(2,4,6)$ representa dos cajas sobre los 800 mm de largo, cuatro sobre los 1200 mm de ancho y seis capas sobre los 1800 mm de altura, alcanzando una capacidad total de 48 cajas por pallet.
+Además de conservar las dimensiones de las cajas actuales como alternativas de referencia, se generó para cada producto una caja candidata orientada a maximizar el aprovechamiento del pallet.
 
-Para cada producto se determinó primero el intervalo de dimensiones internas admisibles. A partir de su límite inferior, se enumeraron los patrones de apilado potencialmente alcanzables y se verificó, para cada uno, que existiera una caja que cumpliera simultáneamente las restricciones de dimensiones, volumen y resistencia. Entre las alternativas factibles se seleccionó aquella que permitía transportar la mayor cantidad de cajas por pallet.
+Un patrón de pallet $(n_L,n_W,n_H)$ indica la cantidad de cajas ubicadas sobre cada uno de sus ejes. Por ejemplo, un patrón $(2,4,6)$ representa dos cajas sobre los 800 mm de largo, cuatro sobre los 1200 mm de ancho y seis capas sobre los 1800 mm de altura, alcanzando una capacidad total de 48 cajas por pallet.
 
-Cuando dos alternativas presentaban la misma capacidad, se conservó la de menor volumen interno. De este modo, el procedimiento prioriza la eficiencia logística sin generar cajas innecesariamente sobredimensionadas.
+Entonces, para cada producto, se determinó el intervalo de dimensiones internas admisibles (*fit* +-10%). A partir de este rango de valores, se obtuvieron los patrones de apilado potencialmente alcanzables para cada caja y se seleccionó aquella que permitía transportar la mayor cantidad de cajas por pallet. Cuando dos patrones presentaban la misma capacidad, se conservó la de menor volumen interno (buscando optimizar la utilización volumétrica de las cajas: $U_{caja}$).
 
 Por ejemplo para el producto BR0001:
 
---EJEMPLO--
+```{r}
+library(kableExtra)
+
+tabla_pallet <- data.frame(
+  `Caja` = c(
+    "Referencia actual",
+    "Caja eficiente individual"
+  ),
+  `Patrón de pallet` = c(
+    "2 × 4 × 5",
+    "2 × 4 × 6"
+  ),
+  `Capacidad` = c(
+    "40",
+    "48"
+  ),
+  check.names = FALSE
+)
+
+kbl(
+  tabla_pallet,
+  align = c("c", "c", "c"),
+  escape = FALSE
+) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 13
+  ) %>%
+  row_spec(
+    0,
+    bold = TRUE,
+    color = "white",
+    background = "#009587",
+    align = "c"
+  ) %>%
+  row_spec(
+    1:nrow(tabla_pallet),
+    extra_css = "vertical-align: middle;"
+  ) %>%
+  column_spec(
+    1,
+    width = "10cm",
+    extra_css = "text-align: left; vertical-align: middle;"
+  ) %>%
+  column_spec(
+    2,
+    width = "6cm",
+    extra_css = "text-align: center; vertical-align: middle;"
+  ) %>%
+  column_spec(
+    3,
+    width = "4cm",
+    extra_css = "text-align: center; vertical-align: middle;"
+  )
+```
+
 
 En este caso, el redimensionamiento permitió incorporar una capa adicional, aumentando en un 20% la cantidad de cajas transportadas por pallet.
 
 #### Cajas compartidas por productos
 
-Se cuenta con **90.951** = $\binom{427}{2}$ pares posibles de cajas. Aunque no todos los pares de productos podrían tener una caja compatible entre si. Basicamente, dos productos tienen potencial para compartir una caja si sus intervalos admisibles se superponen en los tres ejes y, además, la intersección debe permitir el volumen del producto más voluminoso.
-
-A partir de este cruce, se encontraron **30.291** pares geométricamente compatibles. Para cada uno se construye una caja candidata.
+En segundo lugar, se generaron cajas comunes para pares de productos geométricamente compatibles. Para que dos productos pudieran compartir una caja, sus intervalos admisibles debían superponerse en los tres ejes y la intersección debía permitir contener el mayor de sus volúmenes originales. De los **90.951** = $\binom{427}{2}$ pares posibles entre los 427 productos, **30.291** cumplieron estas condiciones. Para cada uno de ellos se construyó una caja común con el mayor aprovechamiento posible del pallet.
 
 Como tener esa cantidad de cajas candidatas nuevas podía ser muy costoso computacionalmente se definió un una medida de similitud basada en las proporciones entre largo, ancho y alto. Por lo que para cada producto se conservó únicamente sus (K) vecinos factibles más cercanos. Parámetro que puede modificarse en tanto se necesite, particularmente en este caso se trabajo con K = 12.
+
+Esta estrategia permitió incorporar alternativas de consolidación sin imponer grupos de productos de manera previa.
 
 #### Nueva matriz de compatibilidad
 
@@ -1675,15 +1742,17 @@ Luego de este procedimiento, vuelve a comenzar cambiando el orden de los product
 
 <p align="center">
 
-<img src="img/greedy_busqueda_local.gif" width="400"/>
+<img src="img/greedy_busqueda_local.gif" style="width:100%; max-width:1200px;"/>
 
 </p>
 
-<!-- En segundo lugar, se generaron cajas comunes para pares de productos geométricamente compatibles. Para que dos productos pudieran compartir una caja, sus intervalos admisibles debían superponerse en los tres ejes y la intersección debía permitir contener el mayor de sus volúmenes originales. De los (90.951) pares posibles entre los 427 productos, (30.291) cumplieron estas condiciones preliminares. Para cada uno de ellos se construyó una caja común con el mayor aprovechamiento posible del pallet. -->
-
-<!-- La generación a partir de pares no implica que esos dos productos deban utilizar necesariamente la caja diseñada. Cada candidata fue posteriormente evaluada contra los 427 SKU; por lo tanto, el modelo pudo asignarla a cualquier producto que cumpliera todas las restricciones. Esta estrategia permitió incorporar alternativas de consolidación sin imponer grupos de productos de manera previa. -->
+Los resultados obtenidos mediante este algoritmo fueron los siguientes:
 
 ```{r}
+
+library(dplyr)
+library(kableExtra)
+library(scales)
 
 costo_inicial <- 209235094
 
@@ -1693,27 +1762,67 @@ tabla_heuristica <- tibble(
 ) %>%
   mutate(
     Descuento = 100 * (costo_inicial - Costo_total_estimado) / costo_inicial
+  ) %>%
+  mutate(
+    Costo_total_estimado = paste0(
+      "USD ",
+      number(
+        Costo_total_estimado,
+        big.mark = ".",
+        decimal.mark = ",",
+        accuracy = 1
+      )
+    ),
+    Descuento = paste0(
+      number(
+        Descuento,
+        accuracy = 0.01,
+        decimal.mark = ","
+      ),
+      "%"
+    )
+  ) %>%
+  rename(
+    `Costo total estimado` = Costo_total_estimado,
+    `Ahorro` = Descuento
   )
 
-tabla_heuristica %>%
-  gt() %>%
-  fmt_currency(
-    columns = Costo_total_estimado,
-    currency = "USD",
-    decimals = 0,
-    sep_mark = ".",
-    dec_mark = ","
+kbl(
+  tabla_heuristica,
+  align = c("c", "c", "c"),
+  escape = FALSE
+) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 13
   ) %>%
-  fmt_percent(
-    columns = Descuento,
-    decimals = 2,
-    scale_values = FALSE,
-    dec_mark = ","
+  row_spec(
+    0,
+    bold = TRUE,
+    color = "white",
+    background = "#009587",
+    align = "c"
   ) %>%
-  cols_label(
-    Grosor = "Grosor",
-    Costo_total_estimado = "Costo total estimado",
-    Descuento = "Ahorro"
+  row_spec(
+    1:nrow(tabla_heuristica),
+    extra_css = "vertical-align: middle;"
+  ) %>%
+  column_spec(
+    1,
+    width = "5cm",
+    extra_css = "text-align: center; vertical-align: middle;"
+  ) %>%
+  column_spec(
+    2,
+    width = "8cm",
+    extra_css = "text-align: center; vertical-align: middle;"
+  ) %>%
+  column_spec(
+    3,
+    width = "5cm",
+    extra_css = "text-align: center; vertical-align: middle;"
   )
 ```
 
@@ -1951,9 +2060,9 @@ htmltools::div(
 )
 ```
 
-Al rediseñar las cajas dentro del margen permitido para optimizar el aprovechamiento volumétrico del pallet, la cantidad promedio de cajas por pallet sube de **59** a **65,7**. Eso representa **119.743** pallets menos por año saliendo de las cinco plantas, con el mismo volumen de producto, pasando de **1.193.792** a **1.074.049** pallets anuales, es decir una reducción del **10%**. 
+Al rediseñar las cajas dentro del margen permitido para optimizar el aprovechamiento volumétrico del pallet, la cantidad promedio de cajas por pallet sube de **59** a **65,7**. Eso representa **119.404** pallets menos por año saliendo de las cinco plantas, con el mismo volumen de producto, pasando de **1.193.792** a **1.074.388** pallets anuales, es decir una reducción del **10%**. 
 
-El mayor aprovechamiento de las dimensiones del pallet antes mencionado, puede verse mejor en los siguientes gráficos, en los cuales se destaca que la utilización promedio subió de un **83,6%** a un **94,9%**:
+El mayor aprovechamiento de las dimensiones del pallet mencionado anteriormente puede apreciarse con mayor claridad en los gráficos que se presentan a continuación. Al comparar la distribución de los porcentajes de utilización de los pallets en la situación actual con la correspondiente a la propuesta optimizada, se observa un desplazamiento de la distribución hacia valores más elevados de utilización, lo que evidencia un uso más eficiente del espacio disponible. En particular, el **85,9%**de los productos en la versión optimizada supera el **90% de utilización del pallet**, mientras que en la situación actual solo lo hace el **26,9%** de los productos.
 
 ```{r, fig.align='center', out.width= '85%'}
 # Dimensiones del pallet (mm)
@@ -2019,7 +2128,21 @@ g10 <- ggplot(cajas_utilizacion,
     panel.grid = element_blank())
 
 g9 / g10
+
+# catalogo_especificaciones_operaciones %>%
+#   summarise(
+#     cantidad = sum(utilizacion > 0.9, na.rm = TRUE),
+#     porcentaje = mean(utilizacion > 0.9, na.rm = TRUE)
+#   )
+# 
+# cajas_utilizacion %>%
+#   summarise(
+#     cantidad = sum(utilizacion_pallet_pct > 90, na.rm = TRUE),
+#     porcentaje = mean(utilizacion_pallet_pct > 90, na.rm = TRUE)
+#   )
 ```
+
+También, se destaca que el promedio de utilización de pallets pasa de un **83,6%** en la situación actual a un **94,9%** en la propuesta optimizada.
 
 ```{r}
 
@@ -2037,6 +2160,16 @@ htmltools::div(
 
 
 # Conclusiones y propuestas
+
+- *Conclusiones generales*
+
+A modo de cierre de este informe, se puede concluir que los objetivos inicialmente planteados fueron cumplidos con creces. Se logró proponer un esquema para una planificación futura de la empresa, en el cual, principalmente, se redujeron los costos un 10,11%, pasando de USD 209.235.094 a USD 188.079.375,44. El portafolio pasó de 204 a 57 tipos de caja (-72%), la utilización promedio del pallet subió de 83,6% a 94,9% y se despachan 119.743 pallets menos por año con el mismo volumen de producto. La reducción de costos vino acompañada de una consolidación real del catálogo y de un uso más eficiente del espacio disponible, y no de un intercambio entre ambos.
+
+La solución es óptima dentro del universo de cajas candidatas considerado y bajo el grosor de 3,0 mm seleccionado en la etapa heurística. La reducción por dominancia no altera ese óptimo, pero un universo de candidatas más amplio podría contener mejores soluciones.
+
+Al levantar las restricciones del desafío se abren líneas de mejora concretas. La más inmediata es permitir grosores mixtos en lugar de uno uniforme: dado que la tolerancia de headspace crece con el grosor (6%, 8% y 10%) y la resistencia a compresión también, asignar un grosor mayor a cajas puntuales amplía su rango dimensional admisible y habilita agrupamientos hoy inviables. En la misma dirección, la configuración interna fija del envase primario es el filtro que más alternativas descarta, por lo que habilitar su rediseño y los pallets mixtos, permitiría avanzar sobre el margen que aún queda en la utilización del pallet.
+
+Por último, la solución es óptima para los volúmenes del año analizado. Como los descuentos dependen del volumen consolidado por tipo de caja y planta, un cambio en el volumen de ventas modifica el óptimo: la asignación debe revisarse periódicamente, y conviene evaluar su robustez frente a variaciones de la demanda.
 
 - *Asignación de nuevos productos*
 
@@ -2065,7 +2198,7 @@ tabla_ejemplo <- data.frame(
 
 kbl(
   tabla_ejemplo,
-  align = c("c", "c", "c", "c", "c"),
+  align = c("l", "c", "c", "c", "c"),
   escape = FALSE
 ) %>%
   kable_styling(
@@ -2096,12 +2229,11 @@ Por eso el criterio de decisión es el **costo incremental del sistema** —el c
 
 Por lo tanto, el equipo de lanzamiento no tiene que decidir con una tabla estática de cajas disponibles, sino que, necesita consultar el estado de volumen del catálogo en el momento de la decisión, porque la mejor caja para un producto depende de cuánto volumen tiene cada caja hoy y de qué tan cerca está de su próximo umbral. Un lanzamiento que se evalúe seis meses más tarde, con otros volúmenes, puede tener otra respuesta correcta.
 
-Para decidir si un nuevo producto se debe de crear una caja nueva, se tiene que pasar por el siguiente proceso, el cual establece que una caja nueva solo se crea cuando se cumplen las tres condiciones a la vez:
+Para decidir si para un nuevo producto se debe crear una caja nueva, se tienen que cumplir las siguientes condiciones a la vez:
 
-1. El ahorro anual supera el 5% frente a la mejor caja existente compatible
-2. El ahorro anual cubre el costo del diseño nuevo (molde, homologación y puesta en marcha)
-3. El catálogo no supera los 60 tipos; si lo supera, se exige dar de baja un tipo de baja rotación en el mismo acto
-    
+1. El ahorro anual supera el 5% frente a la mejor caja existente compatible.
+2. El ahorro anual cubre el costo del diseño nuevo (molde, homologación y puesta en marcha).
+
 En cualquier otro caso, se asigna una caja existente.
 
 Hoy el proceso va en un sentido: I+D define el envase primario y su disposición, y después se fabrica la caja que haga falta. **La propuesta es invertirlo**. Para cada uno de los 57 tipos de caja se puede publicar **la ventana de dimensiones de producto** que admite —un rango de largo, ancho y alto, más un tope de volumen y de peso— y entregarle esa guía a I+D antes de congelar la disposición interna. Un producto diseñado dentro de una de esas ventanas entra al catálogo con un costo nulo de material y accede desde el primer día a la mejor banda de descuento disponible.
