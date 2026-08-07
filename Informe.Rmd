@@ -15,12 +15,12 @@ knitr::opts_chunk$set(
 
 # Introducción {#introduccion} 
 
-Bonsai Corp es una empresa de brócoli congelado, en donde los productos se comercializan en un envase primario que contiene al alimento, y estos son colocados en cajas de cartón (envase secundario) para almacenarlos y transportarlos desde 5 plantas hacia 5 regiones distribuidas por el mundo. Esta cajas son apiladas en pallets de 1.200 × 800 mm y altura máxima de carga de 1.800 mm.
+Bonsai Corp es una empresa de brócoli congelado, en donde los productos se comercializan en un envase primario que contiene al alimento, y estos son colocados en cajas de cartón (envase secundario) para almacenarlos y transportarlos desde 5 plantas hacia 5 regiones distribuidas por el mundo. Esta cajas son apiladas en pallets de 1200 × 800 mm y altura máxima de carga de 1800 mm. Los envíos dentro de la misma región tienen un costo de USD 150 por pallet; los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet.
 
 El catalogo está compuesto de 427 productos, cada uno de los cuales tiene asignado un tipo de caja de acuerdo con sus características. Si bien algunos productos comparten el mismo envase secundario, actualmente se utilizan 204 tipos de caja diferentes. La incorporación progresiva de nuevos productos y diseños dio lugar a un portafolio de packaging altamente fragmentado, en el que cada tipo de caja requiere su propio molde, corridas de producción y espacio de almacenamiento, generando *altos costos de packaging, logística e inventario*. Ante cada lanzamiento de un nuevo producto, estos costos siguen en aumento, y la necesidad de hacer algo para bajarlos es imperiosa.
 
 <p align="center">
-<img src="img/brocoli.jpg" width="600"/>
+<img src="img/brocoli.jpg" width="400"/>
 </p>
 
 # Objetivos
@@ -42,9 +42,9 @@ $C_{packaging} = costo \: por \: caja * volumen \: anual$, aplicando los descuen
 
 En cuanto al precio base por caja, se establecieron tres grosores estandarizados y homologados por Bonsai Corp, los cuales son: 3,0 mm, 4,5 mm y 5,0 mm y el precio de la caja según del grosor del cartón son: USD 0,60 para 3,0mm, USD 0,65 para 4,5mm y USD 0,70 para 5mm. La solución debe adoptar un único grosor de forma uniforme para todos los tipos de caja; no se permiten valores intermedios ni mezclas entre tipos.
 
-$C_{flete} = \sum_{p=1}^{5}cantidad \: de \: pallets_p * costo \: de \: envio \: _p \quad p = planta$, variando el precio según el destino.
+$C_{flete} = \sum_{p=1}^{5}cantidad \: de \: pallets_p * costo \: de \: envio \: _p$, variando el precio según el destino.
 
-Los envíos dentro de la misma región tienen un costo de USD 150 por pallet, mientras que los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet.
+Los envíos dentro de la misma planta ($p$) tienen un costo de USD 150 por pallet, mientras que los envíos a las otras cuatro regiones tienen un costo de USD 500 por pallet.
 
 ## Objetivo secundario
 
@@ -366,7 +366,7 @@ g1 = catalogo_especificaciones_operaciones |>
         panel.grid = element_blank())
 
 htmltools::div(
-  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
+  style = "display: flex; justify-content: center;",
   ggplotly(g1, tooltip = "text")
 )
 
@@ -384,7 +384,7 @@ Bajo el panorama actual, la asignación de los productos a las cajas está lejos
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
 
 htmltools::div(
-  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
+  style = "display: flex; justify-content: center;",
   plot_ly(data = especificaciones_procurement,
           x = ~caja_interior_ancho,
           y = ~caja_interior_largo,
@@ -420,49 +420,85 @@ Como medida de cercanía se consideró la máxima diferencia relativa entre dos 
 
 Esto deja en evidencia que es posible agrupar distintos productos en cajas identicas, consolidando de esta manera un catálogo más eficiente.
 
-### Pallets
+### Utilización de pallets
 
-En el año de estudio, la empresa necesito despachar **1.193.792** pallets, valor muy influenciado por un uso poco eficiente de los mismos. El porcentaje de utilización de los pallets por planta se presenta a continuación:
+<!-- A partir del volumen de cada producto producido en cada planta, analizando *producto por producto*, ya que solo se despachan pallets con un tipo de producto, y redondeando hacia arriba, puede obtenerse la cantidad total de pallets utilizados por la empresa. Obteniendo un total de **1.193.792**, este valor se ve muy influenciado por un uso poco eficiente de los mismos. El porcentaje de utilización de los pallets se presenta a continuación: -->
+
+En el año de estudio, la empresa necesito despachar **1.193.792** pallets, valor muy influenciado por un uso poco eficiente de los mismos. El porcentaje de utilización de los pallets se presenta a continuación:
 
 ```{r}
+library(plotly)
+library(base64enc)
+
 g2 = ggplot(catalogo_especificaciones_operaciones) +
-  aes(x = 100*utilizacion) +
+  aes(x = 100 * utilizacion) +
   geom_histogram(color = "black", fill = "#009587", bins = 10) +
-  labs(x = "% Utilización", y = "Cantidad de productos", title = "Distribución utilización de pallets") +
+  labs(
+    x = "% Utilización",
+    y = "Cantidad de cajas",
+    title = "Distribución de utilización de pallets"
+  ) +
   theme_minimal() + 
-  theme(plot.title = element_text(hjust = 0.5),
-        panel.grid = element_blank())
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    panel.grid = element_blank()
+  )
+
+imagen_utilizacion <- base64enc::dataURI(
+  file = "img/utilizacion_promedio.jpeg",
+  mime = "image/jpeg"
+)
+
+g2_interactivo <- ggplotly(g2) %>%
+  layout(
+    images = list(
+      list(
+        source = imagen_utilizacion,
+        xref = "paper",
+        yref = "paper",
+        x = 0.1,
+        y = 0.92,
+        sizex = 0.4,
+        sizey = 0.4,
+        xanchor = "left",
+        yanchor = "top",
+        sizing = "contain",
+        opacity = 1,
+        layer = "above"
+      )
+    )
+  )
 
 htmltools::div(
-  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
-  ggplotly(g2, tooltip = "text")
+  style = "display: flex; justify-content: center;",
+  g2_interactivo
 )
 ```
 
 ```{r}
 
-# Porcentajes de utilización del pallet
+# # Porcentajes de utilización del pallet
 cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.5, titulo = "") {
-  
+
   n <- length(porcentajes)
   if (is.null(etiquetas)) etiquetas <- paste0("Item ", 1:n)
-  
+
   shapes_list <- list()
   annotations_list <- list()
-  
+
   for (i in seq_len(n)) {
-    
+
     porcentaje <- max(0, min(100, porcentajes[i]))
     frac <- porcentaje / 100
     offset <- (i - 1) * (1 + espacio)
-    
+
     shapes_list[[length(shapes_list) + 1]] <- list(
       type = "rect",
       x0 = offset, x1 = offset + 1, y0 = 0, y1 = 1,
       fillcolor = "gray90",
       line = list(color = "black", width = 2)
     )
-    
+
     shapes_list[[length(shapes_list) + 1]] <- list(
       type = "rect",
       x0 = offset + 0.5 - frac/2, x1 = offset + 0.5 + frac/2,
@@ -470,19 +506,19 @@ cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.5, t
       fillcolor = "#009587",
       line = list(width = 0)
     )
-    
+
     annotations_list[[length(annotations_list) + 1]] <- list(
       x = offset + 0.5, y = 0.5, text = paste0(round(porcentaje, 1), "%"),
       showarrow = FALSE, font = list(size = 20, color = "black")
     )
-    
+
     annotations_list[[length(annotations_list) + 1]] <- list(
       x = offset + 0.5, y = -0.25, text = gsub(" ", "<br>", etiquetas[i]),
       showarrow = FALSE, font = list(size = 12, color = "black"),
       align = "center"
     )
   }
-  
+
   plot_ly(width = 250 * n + 100, height = 350) %>%
     layout(
       title = list(text = titulo, font = list(size = 16), x = 0.5),
@@ -499,260 +535,732 @@ cuadrados_porcentaje <- function(porcentajes, etiquetas = NULL, espacio = 0.5, t
 }
 
 prom_uti_pallet = mean(catalogo_especificaciones_operaciones$utilizacion)
-
-htmltools::div(
-  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
-  cuadrados_porcentaje(
-    porcentajes = prom_uti_pallet * 100,
-    etiquetas = "Total",
-    titulo = "Utilización promedio del pallet"
-  )
-)
+# 
+# htmltools::div(
+#   style = "display: flex; justify-content: center;",
+#   cuadrados_porcentaje(
+#     porcentajes = prom_uti_pallet * 100,
+#     etiquetas = "Total",
+#     titulo = "Utilización promedio del pallet"
+#   )
+# )
 
 
 ```
 
-grafico de utilización por pallets
+<!-- grafico de utilización por pallets -->
+
+<!-- ```{r} -->
+<!-- plantas_orden <- c( -->
+<!--   "Bakersfield", "Buenos Aires", "Curitiba", -->
+<!--   "Monterrey", "Santiago" -->
+<!-- ) -->
+
+<!-- utilizacion_planta <- catalogo_especificaciones_operaciones |> -->
+<!--   select( -->
+<!--     codigo_producto, -->
+<!--     utilizacion, -->
+<!--     starts_with("cantidad_pallets_planta_") -->
+<!--   ) |> -->
+<!--   pivot_longer( -->
+<!--     cols = starts_with("cantidad_pallets_planta_"), -->
+<!--     names_to = "planta", -->
+<!--     names_prefix = "cantidad_pallets_planta_", -->
+<!--     values_to = "pallets" -->
+<!--   ) |> -->
+<!--   filter(pallets > 0) |> -->
+<!--   mutate( -->
+<!--     planta = recode( -->
+<!--       planta, -->
+<!--       "buenos_aires" = "Buenos Aires", -->
+<!--       "curitiba" = "Curitiba", -->
+<!--       "santiago" = "Santiago", -->
+<!--       "monterrey" = "Monterrey", -->
+<!--       "bakersfield" = "Bakersfield" -->
+<!--     ), -->
+<!--     # Primer nivel queda abajo; por eso se invierte para el orden visual. -->
+<!--     planta = factor(planta, levels = rev(plantas_orden)) -->
+<!--   ) -->
+
+<!-- medias_planta <- utilizacion_planta |> -->
+<!--   group_by(planta) |> -->
+<!--   summarise( -->
+<!--     media_utilizacion = weighted.mean(utilizacion, w = pallets), -->
+<!--     pallets = sum(pallets), -->
+<!--     .groups = "drop" -->
+<!--   ) -->
+
+<!-- etiquetas_planta <- setNames( -->
+<!--   paste0( -->
+<!--     as.character(medias_planta$planta), -->
+<!--     "\n(", comma(medias_planta$pallets), " pallets)" -->
+<!--   ), -->
+<!--   as.character(medias_planta$planta) -->
+<!-- ) -->
+
+<!-- g_utilizacion <- ggplot( -->
+<!--   utilizacion_planta, -->
+<!--   aes( -->
+<!--     x = utilizacion, -->
+<!--     y = planta, -->
+<!--     weight = pallets -->
+<!--   ) -->
+<!-- ) + -->
+<!--   geom_density_ridges( -->
+<!--     fill = "#009587", -->
+<!--     color = "#006B61", -->
+<!--     alpha = 0.7, -->
+<!--     linewidth = 0.35, -->
+<!--     scale = 0.95, -->
+<!--     rel_min_height = 0.01, -->
+<!--   ) + -->
+<!--   geom_point( -->
+<!--     data = medias_planta, -->
+<!--     aes(x = media_utilizacion, y = planta), -->
+<!--     inherit.aes = FALSE, -->
+<!--     shape = 21, -->
+<!--     size = 3.2, -->
+<!--     stroke = 0.9, -->
+<!--     fill = "#E4F3EF", -->
+<!--     color = "#00584F" -->
+<!--   ) + -->
+<!--   scale_x_continuous( -->
+<!--     labels = label_percent(accuracy = 1), -->
+<!--     breaks = seq(0.6, 1, by = 0.1), -->
+<!--     limits = c(0.6, 1) -->
+<!--   ) + -->
+<!--   scale_y_discrete(labels = etiquetas_planta) + -->
+<!--   labs( -->
+<!--     title = "Distribución de la utilización de pallets por planta", -->
+<!--     subtitle = "Cada distribución se pondera según la cantidad de pallets asociados a cada producto.", -->
+<!--     x = "Utilización volumétrica del pallet", -->
+<!--     y = NULL, -->
+<!--     caption = "El punto indica la utilización promedio ponderada de cada planta." -->
+<!--   ) + -->
+<!--   theme_minimal() + -->
+<!--   theme( -->
+<!--     plot.title = element_text(hjust = 0.5, face = "bold"), -->
+<!--     plot.subtitle = element_text(hjust = 0.5), -->
+<!--     panel.grid.minor = element_blank(), -->
+<!--     panel.grid.major.y = element_blank(), -->
+<!--     axis.text.y = element_text(color = "black"), -->
+<!--     plot.caption = element_text(hjust = 0) -->
+<!--   ) -->
+
+<!-- g_utilizacion -->
+<!-- ``` -->
+
+Los porcentaje de utilización de los pallets de los productos oscilan del 64,1% al 99,1%, con una media del 83,6%. Mejorar estos resultados permitirá reducir el número de estos que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
 
 ```{r}
-plantas_orden <- c(
-  "Bakersfield", "Buenos Aires", "Curitiba",
-  "Monterrey", "Santiago"
-)
+# 
+# pallets_por_planta <- colSums(catalogo_especificaciones_operaciones |> select(cantidad_pallets_planta_bakersfield,
+#                                                                              cantidad_pallets_planta_buenos_aires,
+#                                                                              cantidad_pallets_planta_curitiba,
+#                                                                              cantidad_pallets_planta_monterrey,
+#                                                                              cantidad_pallets_planta_santiago)) 
+#                                                                      
+# pallets_por_planta_df = data.frame(planta = names(pallets_por_planta), pallets = pallets_por_planta, row.names = NULL)
+# pallets_por_planta_df$planta = recode(pallets_por_planta_df$planta, "cantidad_pallets_planta_bakersfield" = "Bakersfield",
+#                                                                 "cantidad_pallets_planta_buenos_aires" = "Buenos Aires",
+#                                                                 "cantidad_pallets_planta_curitiba" = "Curitiba", 
+#                                                                 "cantidad_pallets_planta_monterrey" = "Monterrey", 
+#                                                                 "cantidad_pallets_planta_santiago" = "Santiago")
+# 
+# g3 = ggplot(pallets_por_planta_df) +
+#       aes(x = reorder(planta, -pallets), y = pallets, text = paste0("Planta: ", planta, "<br>Pallets: ", comma(pallets))) +
+#       geom_col(color = "black", fill = "#009587", width = 0.7) +
+#       labs(x = "Planta", y = "Cantidad de pallets", title = "Cantidad de pallets por planta") +
+#       theme_minimal() + 
+#       theme(plot.title = element_text(hjust = 0.5),
+#             panel.grid = element_blank())
+# 
+# htmltools::div(
+#   style = "display: flex; justify-content: center;",
+#   ggplotly(g3, tooltip = "text")
+# )
+# 
+# total_pallets = sum(pallets_por_planta_df$pallets)
+# cat("El total de pallets en la situación actual es de:", total_pallets)
 
-utilizacion_planta <- catalogo_especificaciones_operaciones |>
-  select(
-    codigo_producto,
-    utilizacion,
-    starts_with("cantidad_pallets_planta_")
-  ) |>
+```
+
+### Volúmen 
+
+El volúmen de venta anual para Bonsai Corp fue de **62.420.911** cajas de productos, las cuales presentaron una cantidad de ventas muy heterogénea según el tipo de producto, la estacionalidad, etc. Particularmente, los diez productos de mayor volumen concentran el 25,7% del total.
+
+A continuación se presenta una tabla interactiva que permite al usuario navegar entre las distintas caracteristicas del producto y evaluar su rendimiento en ventas para el año en estudio.
+
+```{r tabla-volumen-productos}
+library(DT)
+library(dplyr)
+library(scales)
+library(htmltools)
+
+tabla_volumen_productos <- catalogo_especificaciones_operaciones %>%
+  group_by(caja_tipo_id) %>%
+  mutate(productos_por_caja = n_distinct(codigo_producto)) %>%
+  ungroup() %>%
+  transmute(
+    Producto = descripcion_producto,
+    `Tipo de proyecto` = tipo_proyecto,
+    Categoría = categoria,
+    `Caja actual` = paste("Caja", id_sencillo),
+    `Productos por caja` = productos_por_caja,
+    `Volumen anual` = volumen_producto_total,
+    `% del total` = volumen_producto_total / sum(volumen_producto_total)
+  ) %>%
+  arrange(desc(`Volumen anual`))
+
+tags$style(HTML("
+  table.dataTable thead th {
+    background-color: #00796F !important;
+    color: white !important;
+    border-bottom: none !important;
+  }
+
+  table.dataTable tbody td {
+    border-color: #E5ECEA !important;
+    vertical-align: middle;
+  }
+
+  table.dataTable tbody tr.even {
+    background-color: #F5F9F8 !important;
+  }
+
+  table.dataTable tbody tr.odd {
+    background-color: white !important;
+  }
+
+  table.dataTable.hover tbody tr:hover {
+    background-color: #E2F1ED !important;
+  }
+
+  .dataTables_filter input,
+  .dataTables_length select {
+    border: 1px solid #B8D7D0 !important;
+    border-radius: 4px;
+  }
+"))
+
+datatable(
+  tabla_volumen_productos,
+  rownames = FALSE,
+  filter = "top",
+  class = "compact hover",
+  options = list(
+    pageLength = 5,
+    lengthChange = FALSE,
+    scrollX = TRUE,
+    autoWidth = FALSE,
+    dom = "tip",
+    columnDefs = list(
+      list(width = "260px", targets = 0),
+      list(width = "75px", targets = c(2, 3, 4, 5)),
+      list(className = "dt-center", targets = c(2, 3, 5)),
+      list(className = "dt-right", targets = 4)
+    ),
+    language = list(
+      search = "Buscar:",
+      info = "Productos _START_–_END_ de _TOTAL_",
+      infoEmpty = "No se encontraron productos",
+      zeroRecords = "No se encontraron productos"
+    )
+  )
+) %>%
+  formatRound(
+    columns = "Volumen anual",
+    digits = 0,
+    mark = ".",
+    dec.mark = ","
+  ) %>%
+  formatPercentage(
+    columns = "% del total",
+    digits = 2,
+    mark = ","
+  ) %>%
+  formatStyle(
+    "Volumen anual",
+    background = styleColorBar(
+      range(tabla_volumen_productos$`Volumen anual`, na.rm = TRUE),
+      "#009587"
+    ),
+    backgroundSize = "92% 58%",
+    backgroundRepeat = "no-repeat",
+    backgroundPosition = "center"
+  )
+
+```
+
+
+A su vez, la producción de Bonsai Corp se encuentra distribuida en cinco plantas localizadas en Argentina, Brasil, Chile, México y Estados Unidos. En cada una de las sucursales el volumen de venta difiere, siendo la planta que mejores rendimientos presenta es la de Curitiba: con un total de X cajas de productos vendidas.
+
+```{r, fig.align='center'}
+library(dplyr)
+library(tidyr)
+library(leaflet)
+library(scales)
+library(htmltools)
+
+# Resumen anual por planta
+resumen_plantas <- catalogo_especificaciones_operaciones %>%
+  summarise(
+    `Buenos Aires` = sum(volumen_producto_planta_buenos_aires, na.rm = TRUE),
+    Curitiba       = sum(volumen_producto_planta_curitiba, na.rm = TRUE),
+    Santiago       = sum(volumen_producto_planta_santiago, na.rm = TRUE),
+    Monterrey      = sum(volumen_producto_planta_monterrey, na.rm = TRUE),
+    Bakersfield    = sum(volumen_producto_planta_bakersfield, na.rm = TRUE)
+  ) %>%
   pivot_longer(
-    cols = starts_with("cantidad_pallets_planta_"),
+    cols = everything(),
     names_to = "planta",
-    names_prefix = "cantidad_pallets_planta_",
-    values_to = "pallets"
-  ) |>
-  filter(pallets > 0) |>
+    values_to = "volumen_anual"
+  ) %>%
   mutate(
+    latitud = c(-34.6037, -25.4296, -33.4489, 25.6866, 35.3733),
+    longitud = c(-58.3816, -49.2713, -70.6693, -100.3161, -119.0187),
+
+    pallets_anuales = c(
+      sum(catalogo_especificaciones_operaciones$cantidad_pallets_planta_buenos_aires, na.rm = TRUE),
+      sum(catalogo_especificaciones_operaciones$cantidad_pallets_planta_curitiba, na.rm = TRUE),
+      sum(catalogo_especificaciones_operaciones$cantidad_pallets_planta_santiago, na.rm = TRUE),
+      sum(catalogo_especificaciones_operaciones$cantidad_pallets_planta_monterrey, na.rm = TRUE),
+      sum(catalogo_especificaciones_operaciones$cantidad_pallets_planta_bakersfield, na.rm = TRUE)
+    ),
+
+    costo_total = c(
+      sum(catalogo_especificaciones_operaciones$costo_total_planta_buenos_aires, na.rm = TRUE),
+      sum(catalogo_especificaciones_operaciones$costo_total_planta_curitiba, na.rm = TRUE),
+      sum(catalogo_especificaciones_operaciones$costo_total_planta_santiago, na.rm = TRUE),
+      sum(catalogo_especificaciones_operaciones$costo_total_planta_monterrey, na.rm = TRUE),
+      sum(catalogo_especificaciones_operaciones$costo_total_planta_bakersfield, na.rm = TRUE)
+    ),
+
+    costo_unitario_pond = costo_total / volumen_anual,
+
+    radio = rescale(volumen_anual, to = c(10, 28)),
+    etiqueta = paste0(
+  "<strong>", planta, "</strong><br>",
+  "Volumen anual: ", comma(volumen_anual, big.mark = ".", decimal.mark = ","), " cajas<br>",
+  "Participación: ", percent(volumen_anual / sum(volumen_anual),
+                              accuracy = 0.1, decimal.mark = ","), "<br>",
+  "Pallets requeridos: ", comma(pallets_anuales, big.mark = ".", decimal.mark = ","), "<br>",
+  "Costo anual de packaging: USD ",
+  comma(costo_total, big.mark = ".", decimal.mark = ","), "<br>",
+  "Costo unitario ponderado: USD ",
+  number(costo_unitario_pond, accuracy = 0.001, decimal.mark = ",")
+  ))
+
+leaflet(resumen_plantas) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addCircleMarkers(
+    lng = ~longitud,
+    lat = ~latitud,
+    radius = ~radio,
+    fillColor = "#009587",
+    fillOpacity = 0.80,
+    color = "#00695C",
+    weight = 2,
+    label = lapply(resumen_plantas$etiqueta, htmltools::HTML),
+    labelOptions = labelOptions(
+      direction = "auto",
+      opacity = 0.95,
+      style = list(
+        "font-size" = "13px",
+        "padding" = "8px"
+      )
+    )
+  ) %>%
+  addLegend(
+    position = "bottomright",
+    colors = "#009587",
+    labels = "Tamaño del punto: Volumen anual",
+    opacity = 0.8
+  )
+```
+
+
+Estas cantidades tienen relación directa con el precio del packaging, ya que al presentar un mayor volumen (por tipo de caja) se accede a un mayor descuento, presentandose de manera independiente para cada una de las 5 plantas.
+
+### Descuento
+
+Los descuentos a los costos base se determinan de forma independiente para cada tipo de caja y planta, según el volumen anual adquirido. Por analizar este fenómeno, se presentan dos perspectivas complementarias: la cantidad de tipos de caja alcanzada por cada nivel de descuento y la distribución del volumen anual asociado. Mientras la primera permite identificar las oportunidades de consolidación del catálogo en cada planta, la segunda dimensiona su relevancia económica.
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(scales)
+library(plotly)
+library(htmltools)
+
+resumen_cajas_descuentos <- especificaciones_procurement %>%
+  select(
+    caja_tipo_id,
+    matches("^(descuento|volumen_tipo)_planta_")
+  ) %>%
+  pivot_longer(
+    cols = -caja_tipo_id,
+    names_to = c(".value", "planta"),
+    names_pattern = "(descuento|volumen_tipo)_planta_(.*)"
+  ) %>%
+  filter(volumen_tipo > 0) %>% # solo cajas activas en cada planta
+  mutate(
+    ajuste_pct = as.numeric(
+      gsub(",", ".", gsub("[^0-9,+-]", "", descuento))
+    ),
     planta = recode(
       planta,
-      "buenos_aires" = "Buenos Aires",
-      "curitiba" = "Curitiba",
-      "santiago" = "Santiago",
-      "monterrey" = "Monterrey",
-      "bakersfield" = "Bakersfield"
+      buenos_aires = "Buenos Aires",
+      curitiba = "Curitiba",
+      santiago = "Santiago",
+      monterrey = "Monterrey",
+      bakersfield = "Bakersfield"
     ),
-    # Primer nivel queda abajo; por eso se invierte para el orden visual.
-    planta = factor(planta, levels = rev(plantas_orden))
-  )
+    planta = factor(
+      planta,
+      levels = c(
+        "Buenos Aires", "Curitiba", "Santiago",
+        "Monterrey", "Bakersfield"
+      )
+    ),
+    ajuste = case_when(
+      ajuste_pct == -30 ~ "Descuento 30%",
+      ajuste_pct == -20 ~ "Descuento 20%",
+      ajuste_pct == -10 ~ "Descuento 10%",
+      ajuste_pct ==   0 ~ "Sin ajuste",
+      ajuste_pct ==  10 ~ "Recargo 10%"
+    ),
+    ajuste = factor(
+      ajuste,
+      levels = c(
+        "Descuento 30%", "Descuento 20%", "Descuento 10%",
+        "Sin ajuste", "Recargo 10%"
+      )
+    )
+  ) %>%
+  count(planta, ajuste, name = "tipos_caja") %>%
+  complete(planta, ajuste, fill = list(tipos_caja = 0)) %>%
+  group_by(planta) %>%
+  mutate(
+    participacion = tipos_caja / sum(tipos_caja),
+    texto = paste0(
+      "<b>", planta, "</b><br>",
+      ajuste, "<br>",
+      "Tipos de caja: ", tipos_caja, "<br>",
+      "Participación: ",
+      percent(participacion, accuracy = 0.1, decimal.mark = ",")
+    )
+  ) %>%
+  ungroup()
 
-medias_planta <- utilizacion_planta |>
-  group_by(planta) |>
-  summarise(
-    media_utilizacion = weighted.mean(utilizacion, w = pallets),
-    pallets = sum(pallets),
-    .groups = "drop"
-  )
-
-etiquetas_planta <- setNames(
-  paste0(
-    as.character(medias_planta$planta),
-    "\n(", comma(medias_planta$pallets), " pallets)"
-  ),
-  as.character(medias_planta$planta)
+paleta_descuentos <- c(
+  "Descuento 30%" = "#006D60",
+  "Descuento 20%" = "#009587",
+  "Descuento 10%" = "#78BDB3",
+  "Sin ajuste"    = "#D9E1DF",
+  "Recargo 10%"   = "#D18B57"
 )
 
-g_utilizacion <- ggplot(
-  utilizacion_planta,
-  aes(
-    x = utilizacion,
-    y = planta,
-    weight = pallets
-  )
+g_cantidad_cajas <- ggplot(
+  resumen_cajas_descuentos,
+  aes(x = planta, y = participacion, fill = ajuste, text = texto)
 ) +
-  geom_density_ridges(
-    fill = "#009587",
-    color = "#006B61",
-    alpha = 0.7,
-    linewidth = 0.35,
-    scale = 0.95,
-    rel_min_height = 0.01,
+  geom_col(width = 0.72, color = "white", linewidth = 0.45) +
+  scale_fill_manual(
+    values = paleta_descuentos,
+    drop = FALSE,
+    name = "Ajuste"
   ) +
-  geom_point(
-    data = medias_planta,
-    aes(x = media_utilizacion, y = planta),
-    inherit.aes = FALSE,
-    shape = 21,
-    size = 3.2,
-    stroke = 0.9,
-    fill = "#E4F3EF",
-    color = "#00584F"
-  ) +
-  scale_x_continuous(
+  scale_y_continuous(
     labels = label_percent(accuracy = 1),
-    breaks = seq(0.6, 1, by = 0.1),
-    limits = c(0.6, 1)
+    breaks = seq(0, 1, 0.25),
+    expand = c(0, 0)
   ) +
-  scale_y_discrete(labels = etiquetas_planta) +
   labs(
-    title = "Distribución de la utilización de pallets por planta",
-    subtitle = "Cada distribución se pondera según la cantidad de pallets asociados a cada producto.",
-    x = "Utilización volumétrica del pallet",
-    y = NULL,
-    caption = "El punto indica la utilización promedio ponderada de cada planta."
+    x = NULL,
+    y = "Porcentaje",
+    title = "Distribución de tipos de caja según el ajuste de precio"
   ) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5),
+    panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.grid.major.y = element_blank(),
-    axis.text.y = element_text(color = "black"),
-    plot.caption = element_text(hjust = 0)
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
   )
 
-g_utilizacion
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g_cantidad_cajas, tooltip = "text") %>%
+    layout(
+      legend = list(
+        orientation = "h",
+        x = 0.5, xanchor = "center",
+        y = -0.22
+      )
+    )
+)
 ```
-Se presentan cajas con utilizaciones de pallet entre un 64% al 99%. Identificandose grandes posibilidades de mejora en esta área.
+
+Se observa que la planta de Monterrey es la menos eficiente en términos de consolidación de cajas, ya que, más de la mitad de las mismas no llega al volúmen mínimo para no presentar recargas. Por otro lado, la planta de Curitiba es la que presenta una mayor proporción de cajas con descuentos del 30%, alcanzando un 12,5% del total para esa planta, así como también la menor cantidad de cajas con recargos del 10%, alcanzando un 26,7% del total.
+
+Es importante resaltar que en todas las plantas, la categoría mas frecuente entre los ajuste para el precio base fue la recarga del 10%, dejando en clara evidencia la necesidad de una mejora en la consolidación del catálogo.
+
+Este análisis permite identificar las plantas con mayor potencial de ahorro en costos de packaging. Sin embargo, la cantidad de cajas en cada nivel de ajuste no refleja, por sí sola, su impacto económico: también debe considerarse el volumen de ventas que estas representan. Por ejemplo, que el 70% de los tipos de caja presenten un recargo del 10% no necesariamente constituye un problema significativo si dichas cajas concentran un volumen bajo, del total comercializado. Por ello, resulta fundamental complementar este análisis con la proporción del volumen de ventas afectada por cada nivel de ajuste, ya que este indicador permite evaluar con mayor precisión la eficiencia real de cada planta.
 
 ```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(scales)
+library(plotly)
+library(htmltools)
 
-pallets_por_planta <- colSums(catalogo_especificaciones_operaciones |> select(cantidad_pallets_planta_bakersfield,
-                                                                             cantidad_pallets_planta_buenos_aires,
-                                                                             cantidad_pallets_planta_curitiba,
-                                                                             cantidad_pallets_planta_monterrey,
-                                                                             cantidad_pallets_planta_santiago)) 
-                                                                     
-pallets_por_planta_df = data.frame(planta = names(pallets_por_planta), pallets = pallets_por_planta, row.names = NULL)
-pallets_por_planta_df$planta = recode(pallets_por_planta_df$planta, "cantidad_pallets_planta_bakersfield" = "Bakersfield",
-                                                                "cantidad_pallets_planta_buenos_aires" = "Buenos Aires",
-                                                                "cantidad_pallets_planta_curitiba" = "Curitiba", 
-                                                                "cantidad_pallets_planta_monterrey" = "Monterrey", 
-                                                                "cantidad_pallets_planta_santiago" = "Santiago")
+# Distribución del volumen anual según el ajuste de precio aplicable en cada planta
+resumen_descuentos <- especificaciones_procurement %>%
+  select(
+    caja_tipo_id,
+    matches("^(descuento|volumen_tipo)_planta_")
+  ) %>%
+  pivot_longer(
+    cols = -caja_tipo_id,
+    names_to = c(".value", "planta"),
+    names_pattern = "(descuento|volumen_tipo)_planta_(.*)"
+  ) %>%
+  mutate(
+    planta = recode(
+      planta,
+      buenos_aires = "Buenos Aires",
+      curitiba = "Curitiba",
+      santiago = "Santiago",
+      monterrey = "Monterrey",
+      bakersfield = "Bakersfield"
+    ),
+    planta = factor(
+      planta,
+      levels = c(
+        "Buenos Aires", "Curitiba", "Santiago",
+        "Monterrey", "Bakersfield"
+      )
+    ),
+    ajuste = case_when(
+      descuento == -30 ~ "Descuento 30%",
+      descuento == -20 ~ "Descuento 20%",
+      descuento == -10 ~ "Descuento 10%",
+      descuento ==   0 ~ "Sin ajuste",
+      descuento ==  10 ~ "Recargo 10%"
+    ),
+    ajuste = factor(
+      ajuste,
+      levels = c(
+        "Descuento 30%", "Descuento 20%", "Descuento 10%",
+        "Sin ajuste",
+        "Recargo 10%"
+      )
+    )
+  ) %>%
+  group_by(planta, ajuste) %>%
+  summarise(
+    volumen_anual = sum(volumen_tipo, na.rm = TRUE),
+    tipos_caja = n_distinct(caja_tipo_id[volumen_tipo > 0]),
+    .groups = "drop"
+  ) %>%
+  group_by(planta) %>%
+  mutate(
+    participacion = volumen_anual / sum(volumen_anual),
+    texto = paste0(
+      "<b>", planta, "</b><br>",
+      ajuste, "<br>",
+      "Participación del volumen: ",
+      percent(participacion, accuracy = 0.1, decimal.mark = ","), "<br>",
+      "Volumen anual: ",
+      comma(volumen_anual, big.mark = ".", decimal.mark = ","), " cajas<br>",
+      "Tipos de caja con volumen: ", tipos_caja
+    )
+  ) %>%
+  ungroup()
 
-g3 = ggplot(pallets_por_planta_df) +
-      aes(x = reorder(planta, -pallets), y = pallets, text = paste0("Planta: ", planta, "<br>Pallets: ", comma(pallets))) +
-      geom_col(color = "black", fill = "#009587", width = 0.7) +
-      labs(x = "Planta", y = "Cantidad de pallets", title = "Cantidad de pallets por planta") +
-      theme_minimal() + 
-      theme(plot.title = element_text(hjust = 0.5),
-            panel.grid = element_blank())
-
-htmltools::div(
-  style = "display: flex; justify-content: center; margin-top: 30px; margin-bottom: 30px;",
-  ggplotly(g3, tooltip = "text")
+paleta_descuentos <- c(
+  "Descuento 30%" = "#006D60",
+  "Descuento 20%" = "#008F7D",
+  "Descuento 10%" = "#65B8AC",
+  "Sin ajuste"    = "#D9E1DF",
+  "Recargo 10%"   = "#D18B57"
 )
 
-total_pallets = sum(pallets_por_planta_df$pallets)
-cat("El total de pallets en la situación actual es de:", total_pallets)
+g_descuentos <- ggplot(
+  resumen_descuentos,
+  aes(
+    x = planta,
+    y = participacion,
+    fill = ajuste,
+    text = texto
+  )
+) +
+  geom_col(
+    width = 0.72,
+    color = "white",
+    linewidth = 0.4
+  ) +
+  scale_fill_manual(
+    values = paleta_descuentos,
+    drop = FALSE,
+    name = "Ajuste"
+  ) +
+  scale_y_continuous(
+    labels = label_percent(accuracy = 1),
+    expand = expansion(mult = c(0, 0.02))
+  ) +
+  labs(
+    x = NULL,
+    y = "Porcentaje",
+    title = "Distribución del volumen según el ajuste de precio por planta"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
+  )
 
+htmltools::div(
+  style = "display: flex; justify-content: center;",
+  ggplotly(g_descuentos, tooltip = "text") %>%
+    layout(
+      legend = list(
+        orientation = "h",
+        x = 0.5,
+        xanchor = "center",
+        y = -0.22
+      )
+    )
+)
 ```
 
-Los porcentaje de utilización de los pallets de los productos oscilan del **64,1%** al **99,1%**, con una media del **83,6%**. 
+Al analizar la distribución del volumen, el panorama cambia considerablemente. Aunque Monterrey presenta la mayor proporción de tipos de caja con recargo del 10%, resulta ser la planta más eficiente en términos de volumen. Esto se debe a que las 27 cajas con recargos (que representan al 51,9% del total de cajas para esa planta) solo representan el 0,8% del volumen total de ventas. Tiene sentido que así sea, ya que a mayor volumen mayor descuento, pero da indicios de que el margén económico de mejora no es tan grande como se podía intuir con el gráfico anterior.
 
-La cantidad de pallets utilizados por la empresa en la actualidad es de **1.193.792**. Una mejor utilización de los pallets permitirá reducir el número de estos que se utilizan para la movilización de los productos y por consecuencia reducir los costos de traslado.
+En cambio, Bakersfield se destaca por concentrar un volumen grande (35,8%) en cajas que reciben un descuento del 20%. Si parte de esos volúmenes pudiera consolidarse en una menor cantidad de tipos de caja y se alcanzara el umbral requerido para obtener un descuento del 30%, podría generarse una reducción significativa en los costos de packaging de esa planta.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ```{r, fig.width=6, fig.height=5, fig.align='center'}
 
 # Descuentos por planta
 
-g2 = ggplot(especificaciones_procurement) +
-  aes(x = descuento_planta_buenos_aires,
-      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-                    "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587", width = 8) +
-  scale_x_continuous(
-    breaks = unique(especificaciones_procurement$descuento_planta_buenos_aires),
-    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-  ) +
-  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Buenos Aires") +
-  theme_minimal() + 
-  theme(plot.title = element_text(hjust = 0.5),
-        panel.grid = element_blank())
-
-htmltools::div(
-  style = "display: flex; justify-content: center;",
-  ggplotly(g2, tooltip = "text")
-)
-
-g3 = ggplot(especificaciones_procurement) +
-  aes(x = descuento_planta_curitiba,
-      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-                    "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587", width = 8) +
-  scale_x_continuous(
-    breaks = unique(especificaciones_procurement$descuento_planta_curitiba),
-    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-  ) +
-  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Curitiba") +
-  theme_minimal() + 
-  theme(plot.title = element_text(hjust = 0.5),
-        panel.grid = element_blank())
-
-htmltools::div(
-  style = "display: flex; justify-content: center;",
-  ggplotly(g3, tooltip = "text")
-)
-
-g4 = ggplot(especificaciones_procurement) +
-  aes(x = descuento_planta_santiago,
-      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-                    "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587", width = 8) +
-  scale_x_continuous(
-    breaks = unique(especificaciones_procurement$descuento_planta_santiago),
-    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-  ) +
-  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Santiago") +
-  theme_minimal() + 
-  theme(plot.title = element_text(hjust = 0.5),
-        panel.grid = element_blank())
-
-htmltools::div(
-  style = "display: flex; justify-content: center;",
-  ggplotly(g4, tooltip = "text")
-)
-
-g5 = ggplot(especificaciones_procurement) +
-  aes(x = descuento_planta_monterrey,
-      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-                    "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587", width = 8) +
-  scale_x_continuous(
-    breaks = unique(especificaciones_procurement$descuento_planta_monterrey),
-    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-  ) +
-  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Monterrey") + 
-  theme_minimal() + 
-  theme(plot.title = element_text(hjust = 0.5),
-        panel.grid = element_blank()) 
-
-htmltools::div(
-  style = "display: flex; justify-content: center;",
-  ggplotly(g5, tooltip = "text")
-)
-
-g6 = ggplot(especificaciones_procurement) +
-  aes(x = descuento_planta_bakersfield,
-      text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
-                    "<br>Cantidad: ", after_stat(count))) +
-  geom_bar(color = "black", fill = "#009587", width = 8) +
-  scale_x_continuous(
-    breaks = unique(especificaciones_procurement$descuento_planta_bakersfield),
-    labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
-  ) +
-  labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Bakersfield") +
-  theme_minimal()+ 
-  theme(plot.title = element_text(hjust = 0.5),
-        panel.grid = element_blank())
-
-htmltools::div(
-  style = "display: flex; justify-content: center;",
-  ggplotly(g6, tooltip = "text")
-)
+# g2 = ggplot(especificaciones_procurement) +
+#   aes(x = descuento_planta_buenos_aires,
+#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+#                     "<br>Cantidad: ", after_stat(count))) +
+#   geom_bar(color = "black", fill = "#009587", width = 8) +
+#   scale_x_continuous(
+#     breaks = unique(especificaciones_procurement$descuento_planta_buenos_aires),
+#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+#   ) +
+#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Buenos Aires") +
+#   theme_minimal() +
+#   theme(plot.title = element_text(hjust = 0.5),
+#         panel.grid = element_blank())
+# 
+# htmltools::div(
+#   style = "display: flex; justify-content: center;",
+#   ggplotly(g2, tooltip = "text")
+# )
+# 
+# g3 = ggplot(especificaciones_procurement) +
+#   aes(x = descuento_planta_curitiba,
+#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+#                     "<br>Cantidad: ", after_stat(count))) +
+#   geom_bar(color = "black", fill = "#009587", width = 8) +
+#   scale_x_continuous(
+#     breaks = unique(especificaciones_procurement$descuento_planta_curitiba),
+#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+#   ) +
+#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Curitiba") +
+#   theme_minimal() +
+#   theme(plot.title = element_text(hjust = 0.5),
+#         panel.grid = element_blank())
+# 
+# htmltools::div(
+#   style = "display: flex; justify-content: center;",
+#   ggplotly(g3, tooltip = "text")
+# )
+# 
+# g4 = ggplot(especificaciones_procurement) +
+#   aes(x = descuento_planta_santiago,
+#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+#                     "<br>Cantidad: ", after_stat(count))) +
+#   geom_bar(color = "black", fill = "#009587", width = 8) +
+#   scale_x_continuous(
+#     breaks = unique(especificaciones_procurement$descuento_planta_santiago),
+#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+#   ) +
+#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Santiago") +
+#   theme_minimal() +
+#   theme(plot.title = element_text(hjust = 0.5),
+#         panel.grid = element_blank())
+# 
+# htmltools::div(
+#   style = "display: flex; justify-content: center;",
+#   ggplotly(g4, tooltip = "text")
+# )
+# 
+# g5 = ggplot(especificaciones_procurement) +
+#   aes(x = descuento_planta_monterrey,
+#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+#                     "<br>Cantidad: ", after_stat(count))) +
+#   geom_bar(color = "black", fill = "#009587", width = 8) +
+#   scale_x_continuous(
+#     breaks = unique(especificaciones_procurement$descuento_planta_monterrey),
+#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+#   ) +
+#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Monterrey") +
+#   theme_minimal() +
+#   theme(plot.title = element_text(hjust = 0.5),
+#         panel.grid = element_blank())
+# 
+# htmltools::div(
+#   style = "display: flex; justify-content: center;",
+#   ggplotly(g5, tooltip = "text")
+# )
+# 
+# g6 = ggplot(especificaciones_procurement) +
+#   aes(x = descuento_planta_bakersfield,
+#       text = paste0("Descuento: ", ifelse(after_stat(x) > 0, "+", ""), after_stat(x), "%",
+#                     "<br>Cantidad: ", after_stat(count))) +
+#   geom_bar(color = "black", fill = "#009587", width = 8) +
+#   scale_x_continuous(
+#     breaks = unique(especificaciones_procurement$descuento_planta_bakersfield),
+#     labels = function(x) paste0(ifelse(x > 0, "+", ""), x, "%")
+#   ) +
+#   labs(x = "Descuentos", y = "Cantidad", title = "Cantidad de descuentos - Planta Bakersfield") +
+#   theme_minimal()+
+#   theme(plot.title = element_text(hjust = 0.5),
+#         panel.grid = element_blank())
+# 
+# htmltools::div(
+#   style = "display: flex; justify-content: center;",
+#   ggplotly(g6, tooltip = "text")
+# )
 
 ```
+
 
 ### Costos
 
@@ -926,7 +1434,306 @@ costos_plantas <- costos_plantas %>%
 
 Se puede observar que la planta de Curitiba es la que mayores costos tiene, siendo estos el **35,8%** del costo total. Sin embargo, al ver la relación costo/volumen, todas las plantas tienen un valor parecido, siendo la de Monterrey la más eficiente y la de Santiago la menos. La reducción de los valores de esta relación, será uno de los puntos más importantes en la posterior optimización.
 
-## Técnicas aplicadas
+## Optimización de costos
+
+### Matriz de compatibilidad
+
+Como punto de partida se decidió identificar opciones de mejora en cuanto a la asignación de productos, dentro del universo de cajas existentes en nuestro catálogo. En particular, se obtuvo una matriz que permitiera responder a la siguiente pregunta: *Para cada uno de los 427 productos, ¿cuáles de las 204 cajas existentes podrían contenerlo respetando todas las restricciones, bajo cada grosor permitido?*
+
+Esto generó 3 matrices de compatibilidad, de 427 (productos) filas y 204 (cajas) columnas, donde cada celda tomaba el valor 1 si el producto podía utilizar esa caja en base a las restricciones y 0 en caso contrario. Finalmente analizando el universo completo, se presentaron **427 × 204 × 3 = 261.324** combinaciones posibles. Identificando si para cada cruce de producto, caja existente y grosor, se cumplian las siguientes restricciones.
+
+Para una dimensión original $d_o$ y una dimensión interna propuesta $d$, se verificó para cada eje:
+
+$$0,9 d_o \leq d \leq 1,1 d_o$$ 
+Además, si la caja crece en ese eje, debe respetar el headspace:
+
+$$ d-d_o \leq min(hd,40) $$
+donde $h$ vale $0,06$, $0,08$ o $0,10$ según el grosor. También se exige que el volumen interno no sea menor al original y que la caja resista el peso de las capas superiores del pallet.
+
+A continuación se visualiza una muestra pequeña de cajas y productos, para un grosor en particular, que permite entender de mejor manera el resultado final de la *matriz de compatibilidad*.
+
+```{r}
+library(forcats)
+
+compat <- readRDS("Datos modificados/compatibilidad_producto_caja.rds")
+
+# Heatmap
+
+# --- Filtrar al grosor que quieras mostrar (ejemplo: 3) ---
+compat_grosor <- compat %>% filter(grosor == 3)
+
+# --- Elegir una muestra legible: cajas "hub" (compatibles con más productos) ---
+top_cajas <- compat_grosor %>%
+  filter(compatible) %>%
+  count(caja_tipo_id, sort = TRUE) %>%
+  slice_head(n = 18) %>%
+  pull(caja_tipo_id)
+
+# --- y los productos más "flexibles" dentro de esas cajas ---
+top_productos <- compat_grosor %>%
+  filter(compatible, caja_tipo_id %in% top_cajas) %>%
+  count(codigo_producto, sort = TRUE) %>%
+  slice_head(n = 35) %>%
+  pull(codigo_producto)
+
+# --- armar la muestra final, con IDs cortos para que el eje x sea legible ---
+muestra <- compat_grosor %>%
+  filter(codigo_producto %in% top_productos, caja_tipo_id %in% top_cajas) %>%
+  mutate(
+    caja_id_corto  = paste0("k", as.integer(factor(caja_tipo_id, levels = top_cajas))),
+    producto_f     = factor(codigo_producto, levels = top_productos),
+    compatible_lbl = factor(compatible, levels = c(TRUE, FALSE),
+                            labels = c("Compatible", "No compatible"))
+  )
+
+# --- el heatmap ---
+ggplot(muestra, aes(x = caja_id_corto, y = fct_rev(producto_f), fill = compatible_lbl)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  scale_fill_manual(
+    values = c("Compatible" = "#7CB342", "No compatible" = "#E53935"),
+    name = NULL
+  ) +
+  labs(
+    title    = "Matriz de compatibilidad producto–caja",
+    subtitle = "Grosor 3 mm · muestra de 35 productos y 18 cajas candidatas",
+    x = "Caja candidata",
+    y = "Producto"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.x     = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 8),
+    axis.text.y     = element_text(size = 7),
+    panel.grid      = element_blank(),
+    plot.title      = element_text(face = "bold", size = 14),
+    plot.subtitle   = element_text(color = "grey40", size = 10),
+    legend.position = "top",
+    legend.text     = element_text(size = 10)
+  )
+```
+
+Se obtuvo de esta manera cada una de las combinaciones posibles entre productos y cajas existentes para cada grosor, los cuales permitiran formar nuevos grupos de productos más eficientes en términos de costos. Los resultados para cada grosor fueron los siguientes.
+
+```{r}
+# Gráfico de embudo
+
+etapas <- c(
+  "Todas las combinaciones",
+  "+ Fit ±10%",
+  "+ Volumen",
+  "+ Headspace",
+  "+ Resistencia"
+)
+
+embudo_estatico <- compat %>%
+  group_by(grosor) %>%
+  summarise(
+    `Todas las combinaciones` = n(),
+    
+    `+ Fit ±10%` =
+      sum(fit_ok, na.rm = TRUE),
+    
+    `+ Volumen` =
+      sum(fit_ok & volumen_ok, na.rm = TRUE),
+    
+    `+ Headspace` =
+      sum(
+        fit_ok &
+          volumen_ok &
+          headspace_ok,
+        na.rm = TRUE
+      ),
+    
+    `+ Resistencia` =
+      sum(
+        fit_ok &
+          volumen_ok &
+          headspace_ok &
+          resistencia_ok,
+        na.rm = TRUE
+      ),
+    
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = -grosor,
+    names_to = "etapa",
+    values_to = "combinaciones"
+  ) %>%
+  mutate(
+    etapa = factor(etapa, levels = etapas),
+    grosor = factor(
+      grosor,
+      levels = c(3, 4.5, 5),
+      labels = c("Grosor: 3,0 mm", "Grosor: 4,5 mm", "Grosor: 5,0 mm")
+    )
+  ) %>%
+  arrange(grosor, etapa) %>%
+  group_by(grosor) %>%
+  mutate(
+    porcentaje = combinaciones / first(combinaciones),
+    
+    etiqueta = paste0(
+      number(
+        combinaciones,
+        big.mark = ".",
+        decimal.mark = ","
+      ),
+      " (",
+      percent(
+        porcentaje,
+        accuracy = 0.1,
+        decimal.mark = ","
+      ),
+      ")"
+    ),
+    
+    # Centra cada barra para darle forma de embudo
+    xmin = -combinaciones / 2,
+    xmax =  combinaciones / 2,
+    
+    posicion = as.numeric(etapa),
+    ymin = posicion - 0.38,
+    ymax = posicion + 0.38
+  ) %>%
+  ungroup()
+
+colores_etapas <- c(
+  "Todas las combinaciones" = "#1565C0",
+  "+ Fit ±10%"              = "#1976D2",
+  "+ Volumen"               = "#00897B",
+  "+ Headspace"             = "#43A047",
+  "+ Resistencia"           = "#7CB342"
+)
+
+grafico_embudos <- ggplot(embudo_estatico) +
+  
+  geom_rect(
+    aes(
+      xmin = xmin,
+      xmax = xmax,
+      ymin = ymin,
+      ymax = ymax,
+      fill = etapa
+    ),
+    color = "white",
+    linewidth = 1
+  ) +
+  
+  geom_text(
+    aes(
+      x = 0,
+      y = ymin - 0.14,
+      label = etiqueta
+    ),
+    color = "#263238",
+    fontface = "bold",
+    lineheight = 0.9,
+    size = 3.2,
+    vjust = 1
+  )+
+  
+  facet_wrap(
+    ~grosor,
+    nrow = 1
+  ) +
+  
+  scale_y_reverse(
+    breaks = seq_along(etapas),
+    labels = etapas,
+    expand = expansion(add = 0.5)
+  ) +
+  
+  scale_x_continuous(
+    limits = c(-45000, 45000),
+    breaks = c(-40000, -20000, 0, 20000, 40000),
+    labels = function(x) {
+      number(
+        abs(x),
+        big.mark = ".",
+        decimal.mark = ","
+      )
+    }
+  ) +
+  
+  scale_fill_manual(
+    values = colores_etapas,
+    guide = "none"
+  ) +
+  
+  labs(
+    title = "Embudo de compatibilidad producto–caja",
+    subtitle = paste0(
+      "Cantidad de combinaciones que superan acumulativamente ",
+      "cada restricción"
+    ),
+    x = "Cantidad de combinaciones",
+    y = NULL,
+    caption = paste0(
+      "Cada escenario parte de 87.108 combinaciones producto–caja. ",
+      "El porcentaje se calcula respecto del total inicial."
+    )
+  ) +
+  
+  theme_minimal(
+    base_family = "Roboto",
+    base_size = 11
+  ) +
+  
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16,
+      color = "#263238"
+    ),
+    
+    plot.subtitle = element_text(
+      size = 11,
+      color = "#546E7A",
+      margin = margin(b = 15)
+    ),
+    
+    strip.text = element_text(
+      face = "bold",
+      size = 12,
+      color = "#37474F"
+    ),
+    
+    strip.background = element_rect(
+      fill = "#ECEFF1",
+      color = NA
+    ),
+    
+    axis.text.y = element_text(
+      face = "bold",
+      color = "#455A64",
+      size = 10
+    ),
+    
+    axis.text.x = element_text(
+      color = "#607D8B"
+    ),
+    
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    
+    panel.spacing = unit(1.2, "lines"),
+    
+    plot.caption = element_text(
+      color = "#78909C",
+      hjust = 0,
+      margin = margin(t = 12)
+    )
+  )
+
+grafico_embudos
+```
+De lo cual se desprende el siguiente análisis:
+
+- El fit (+-10%) de las dimensiones es el filtro dominante: descarta cerca del **85,7%** de las combinaciones.
+
+- Un mayor grosor flexibiliza el headspace y, por eso, amplía las alternativas geométricas.
+
+- En este universo inicial de cajas existentes, la resistencia no elimina alternativas adicionales.
 
 ## Resultados
 
@@ -1109,11 +1916,9 @@ htmltools::div(
 ```
 
 
+# Conclusiones y propuestas
 
-
-# Conclusiones y propuestas de mejoras
-
-- Asignación de nuevos productos
+- *Asignación de nuevos productos*
 
 Los USD 21.155.718,50 ahorrados no dependen de haber encontrado 57 cajas buenas: dependen de que el volumen siga concentrado en esas 57 cajas. El catálogo de productos es un activo que se actualiza con cada nuevo lanzamiento. Sin una regla clara, cada producto nuevo tiende a traer su propia caja y el ahorro disminuye lanzamiento a lanzamiento.
 
@@ -1121,11 +1926,47 @@ Por lo tanto, cada nuevo lanzamiento tiene que responder una sola pregunta: **¿
 
 El catálogo optimizado tiene un caso que ilustra el punto con números reales. Una de las 57 cajas agrupa nueve productos y acumula 97.776 unidades anuales en la planta de Monterrey: le faltan apenas 2.224 unidades para cruzar el umbral de las 100.000 y pasar de un 10% a un 20% de descuento. Supongamos que llega un producto nuevo de 385 × 290 × 235 mm y 12 kg, con un pronóstico de 3.000 unidades anuales en esa misma planta. Cuatro cajas del catálogo lo admiten, y las cuatro entran 56 unidades por pallet, de modo que el costo de flete es idéntico en todos los casos:
 
-Opción	Volumen que ya tiene en Monterrey	Flete	Efecto en packaging	Costo incremental total
-Caja A — 9 productos, cerca del umbral	97.776	8.100	−4.427	3.673
-Caja B — 20 productos, ya en la mejor banda	1.471.325	8.100	+1.260	9.360
-Caja C — 8 productos, sin volumen en la planta	0	8.100	+1.980	10.080 
-Diseño nuevo	0	8.100	+1.980	10.080
+```{r}
+library(kableExtra)
+
+tabla_ejemplo <- data.frame(
+  `Opción` = c(
+    "Caja A — 9 productos, cerca del umbral",
+    "Caja B — 20 productos, ya en la mejor banda",
+    "Caja C — 8 productos, sin volumen en la planta",
+    "Diseño nuevo"
+  ),
+  `Volumen que ya tiene en Monterrey` = c("97.776", "1.471.325", "0", "0"),
+  `Flete` = c("8.100", "8.100", "8.100", "8.100"),
+  `Efecto en packaging` = c("-4.427", "+1.260", "+1.980", "+1.980"),
+  `Costo incremental total` = c("3.673", "9.360", "10.080", "10.080"),
+  check.names = FALSE
+)
+
+kbl(
+  tabla_ejemplo,
+  align = c("c", "c", "c", "c", "c"),
+  escape = FALSE
+) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 13
+  ) %>%
+  row_spec(
+    0,
+    bold = TRUE,
+    color = "white",
+    background = "#009587",
+    align = "c"
+  ) %>%
+  row_spec(1:nrow(tabla_ejemplo), extra_css = "vertical-align: middle;") %>%
+  column_spec(1, width = "8cm", extra_css = "text-align: justify; vertical-align: middle;") %>%
+  column_spec(2, width = "4cm", extra_css = "text-align: center; vertical-align: middle;") %>%
+  column_spec(3:5, width = "3cm", extra_css = "text-align: center; vertical-align: middle;")
+```
+
 
 Se puede apreciar que la caja A cuesta un 61% menos que la segunda mejor y un 64% menos que crear una caja nueva. Su efecto en packaging es incluso negativo: las 3.000 unidades nuevas cuestan USD 1.440, y al mismo tiempo abaratan en USD 5.867 las 97.776 unidades que ya estaban en esa caja, porque el conjunto pasa a comprarse con un 20% de descuento en lugar de un 10%.
 
@@ -1145,4 +1986,7 @@ En cualquier otro caso, se asigna una caja existente.
 
 Hoy el proceso va en un sentido: I+D define el envase primario y su disposición, y después se fabrica la caja que haga falta. **La propuesta es invertirlo**. Para cada uno de los 57 tipos de caja se puede publicar **la ventana de dimensiones de producto** que admite —un rango de largo, ancho y alto, más un tope de volumen y de peso— y entregarle esa guía a I+D antes de congelar la disposición interna. Un producto diseñado dentro de una de esas ventanas entra al catálogo con un costo nulo de material y accede desde el primer día a la mejor banda de descuento disponible.
 
+<p align="center">
+<img src="img/protocolo.jpeg" width="400"/>
+</p>
 
