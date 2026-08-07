@@ -91,7 +91,7 @@ Estas métricas permitirán analizar si la reducción de costos se acompaña de 
 
 - **Configuración interna fija:** la cantidad de envases primarios y su disposición dentro de la caja secundaria no pueden modificarse. La orientación de la caja también es fija, por lo que la dimensión de altura siempre corresponde al eje vertical del pallet.
 
-- **Headspace máximo:** el espacio libre entre el producto y las paredes de la caja no tiene un mínimo exigido, pero sí un máximo permitido según el grosor del cartón: 6% para cajas de hasta 3,0 mm, 8% para cajas de hasta 4,5 mm y 10% para cajas de más de 5 mm, con un límite absoluto de 40 mm por eje.
+- **Headspace máximo:** el espacio libre entre el producto y las paredes de la caja no tiene un mínimo exigido, pero sí un máximo permitido según el grosor del cartón: 6% para cajas de 3,0 mm, 8% para cajas de 4,5 mm y 10% para cajas de 5 mm, con un límite absoluto de 40 mm por eje.
 
 - **Dimensiones mínimas de la caja:** las dimensiones internas actuales de cada caja representan el tamaño mínimo necesario para contener el producto.
 
